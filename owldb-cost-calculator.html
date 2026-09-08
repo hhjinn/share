@@ -1,0 +1,1890 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OwlDB 예상 비용 계산기</title>
+<!--
+  ============================================================================
+  OwlDB 예상 비용 계산기 (단일 HTML, 외부 라이브러리와 CDN 의존성 없음)
+  ============================================================================
+
+  [가격 데이터 수정 방법]
+  1) 화면 우측 상단 "관리자 설정" 버튼을 눌러 설정 패널을 엽니다.
+  2) 왼쪽 메뉴에서 인스턴스, 스토리지 유형, IOPS 구간, Mbps 구간, 루트 볼륨, 라이선스 가격,
+     구성 규칙(노드 구성 라벨 규칙, 구성 방식, DR 규칙, Redo 산정 규칙, 라이선스 유형 등), 기본 설정을 선택합니다.
+     라이선스 가격은 "DB 유형 + 구성 라벨(예: Single(SE), EE + TAC, HA(EE)) + 가격 종류 + vCPU" 별 노드당 시간 단가이며,
+     어떤 노드에 어떤 구성 라벨을 적용할지는 "노드 구성 라벨 규칙"에서 노드 역할(기본, 복구용 Standby, Read Only Standby)별로 정합니다.
+  3) 표의 셀을 직접 수정하거나 "행 추가", "삭제" 버튼으로 항목을 관리합니다.
+     변경 내용은 즉시 계산에 반영되고 브라우저 로컬 저장소(localStorage)에 자동 저장됩니다.
+  4) 코드에서 직접 바꾸려면 아래 스크립트의 DEFAULT_PRICING_CONFIG 객체만 수정합니다.
+     계산 로직 안에는 가격 숫자가 없으며, 모든 가격과 규칙은 이 객체(pricingConfig) 하나로 관리됩니다.
+     각 가격 항목은 id, 적용 조건, 단가, 단위, startDate, endDate, memo, active 필드를 가지며
+     기준일(meta.pricingDate)에 유효하고 active 가 true 인 항목만 계산에 사용됩니다.
+
+  [JSON 가져오기와 내보내기 방법]
+  - 내보내기: 관리자 설정 > "JSON 관리" > "JSON 내보내기". 파일로 저장되고 텍스트 영역에도 표시됩니다.
+  - 가져오기: 관리자 설정 > "JSON 관리" 에서 파일을 선택하거나 텍스트 영역에 JSON 을 붙여 넣은 뒤
+    "가져오기 실행" 을 누릅니다. 유효성 검사를 통과한 경우에만 적용되며 오류가 있으면 이유를 표시합니다.
+  - "기본 설정으로 복원" 은 코드에 내장된 DEFAULT_PRICING_CONFIG 로 되돌립니다.
+  ============================================================================
+-->
+<style>
+  :root{
+    --bg:#f3f5f8; --card:#ffffff; --border:#d8dee8; --border-strong:#b9c2d0;
+    --text:#1e2633; --muted:#667085; --primary:#1f4e9a; --primary-dark:#173d7a; --primary-soft:#e8eef8;
+    --danger:#b42318; --danger-bg:#fef3f2; --danger-border:#f2b8b5;
+    --warn:#9a5b00; --warn-bg:#fff8e6; --warn-border:#f5d78e;
+    --ok:#067647; --ok-bg:#ecfdf3; --ok-border:#a6e9c3;
+    --radius:8px; --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:"Segoe UI","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+  h1,h2,h3,h4{margin:0;font-weight:600}
+  button,input,select,textarea{font:inherit;color:inherit}
+  [hidden]{display:none !important}
+  a{color:var(--primary)}
+
+  .topbar{background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
+  .topbar-inner{max-width:1360px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{background:var(--primary);color:#fff;font-weight:700;letter-spacing:.3px;border-radius:6px;padding:4px 9px;font-size:13px}
+  .brand h1{font-size:18px}
+  .topbar-meta{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:#f8fafc;border-radius:999px;padding:3px 10px;font-size:12px;color:var(--muted);white-space:nowrap}
+  .chip b{color:var(--text);font-weight:600}
+  .chip.warn{background:var(--warn-bg);border-color:var(--warn-border);color:var(--warn)}
+  .btn{border:1px solid var(--border-strong);background:#fff;border-radius:6px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:500;line-height:1.3;white-space:nowrap}
+  .btn:hover{background:#f4f6fa}
+  .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+  .btn.primary:hover{background:var(--primary-dark)}
+  .btn.danger{color:var(--danger);border-color:var(--danger-border)}
+  .btn.danger:hover{background:var(--danger-bg)}
+  .btn.sm{padding:4px 9px;font-size:12px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+
+  .page{max-width:1360px;margin:0 auto;padding:20px}
+  .notice{border:1px solid var(--warn-border);background:var(--warn-bg);color:var(--warn);border-radius:var(--radius);padding:10px 14px;margin-bottom:16px;font-size:13px}
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:20px;align-items:start}
+  .layout > *{min-width:0}
+  @media (max-width:1080px){.layout{grid-template-columns:minmax(0,1fr)}}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px}
+  .card-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+  .card-head h2{font-size:15px}
+  .card-head .step{background:var(--primary-soft);color:var(--primary);font-weight:700;font-size:12px;border-radius:6px;padding:2px 8px}
+  .card-body{padding:16px 18px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px 16px}
+  .field{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .field label{font-size:12px;color:var(--muted);font-weight:600}
+  .field label .req{color:var(--danger);margin-left:2px}
+  .field input,.field select{width:100%;border:1px solid var(--border-strong);border-radius:6px;padding:7px 10px;background:#fff;min-height:36px}
+  .field input:focus,.field select:focus{outline:2px solid rgba(31,78,154,.25);border-color:var(--primary)}
+  .field input:disabled,.field select:disabled,.field input[readonly]{background:#f1f3f6;color:#7c8594;cursor:not-allowed}
+  .field.invalid input,.field.invalid select{border-color:var(--danger);background:#fff8f7}
+  .hint{font-size:12px;color:var(--muted);min-height:16px}
+  .hint.error{color:var(--danger)}
+  .hint.warn{color:var(--warn)}
+  .hint.info{color:var(--primary)}
+  .checkline{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500}
+  .checkline input{width:auto;min-height:auto}
+  /* 계산기형 입력 컴포넌트 */
+  .seg{display:flex;flex-wrap:wrap;gap:6px}
+  .seg button{border:1px solid var(--border-strong);background:#fff;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:13px;min-height:36px;flex:1 1 auto;min-width:0;line-height:1.25}
+  .seg button:hover:not(:disabled){border-color:var(--primary);background:var(--primary-soft)}
+  .seg button.on{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600}
+  .seg button:disabled{background:#f1f3f6;color:#a0a8b5;cursor:not-allowed}
+  .seg button .sub{display:block;font-size:11px;font-weight:400;opacity:.85}
+  .seg button.on .sub{color:#e6edf8}
+  .stepper{display:flex;border:1px solid var(--border-strong);border-radius:6px;overflow:hidden;background:#fff}
+  .stepper button{border:0;background:#f4f6fa;width:40px;cursor:pointer;font-size:18px;color:var(--primary);flex-shrink:0}
+  .stepper button:hover:not(:disabled){background:var(--primary-soft)}
+  .stepper button:disabled{color:#b8bfcc;cursor:not-allowed;background:#f1f3f6}
+  .field .stepper input{border:0;border-radius:0;text-align:center;flex:1;min-width:0;font-weight:600;font-size:15px}
+  .field .stepper input:focus{outline:none}
+  .field.invalid .stepper{border-color:var(--danger)}
+  .presets{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+  .presets button{border:1px solid var(--border);background:#fff;border-radius:999px;padding:1px 8px;font-size:11px;cursor:pointer;color:var(--muted);line-height:1.5}
+  .presets button:hover:not(:disabled){border-color:var(--primary);color:var(--primary)}
+  .presets button.on{background:var(--primary-soft);border-color:var(--primary);color:var(--primary);font-weight:600}
+  .presets button:disabled{opacity:.45;cursor:not-allowed}
+  .instpicker{border:1px solid var(--border-strong);border-radius:6px;overflow:hidden;background:#fff}
+  .field.invalid .instpicker{border-color:var(--danger)}
+  .instfilter{display:flex;gap:8px;flex-wrap:wrap;padding:8px;border-bottom:1px solid var(--border);background:#f8fafc;align-items:center}
+  .field .instfilter input{flex:1 1 200px;min-height:32px;padding:5px 10px;width:auto}
+  .seg.small{gap:4px}
+  .seg.small button{padding:3px 10px;min-height:28px;font-size:12px;flex:0 0 auto}
+  .instlist{max-height:250px;overflow-y:auto;position:relative}
+  .instrow{display:grid;grid-template-columns:minmax(0,1.6fr) 64px 92px 112px;gap:8px;align-items:center;padding:7px 12px;border:0;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;width:100%;background:#fff;text-align:left;line-height:1.3}
+  .instrow:hover{background:var(--primary-soft)}
+  .instrow.on{background:var(--primary);color:#fff;font-weight:600}
+  .instrow .mut{color:var(--muted);font-size:11.5px;font-weight:400;margin-left:4px}
+  .instrow.on .mut{color:#dbe4f3}
+  .instrow.nop{color:#a0a8b5;background:#fafbfc}
+  .instrow.nop .mut{color:var(--warn)}
+  .instrow .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .instrow .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .instrow.head{background:#f5f7fa;color:var(--muted);font-size:11.5px;font-weight:600;cursor:default;position:sticky;top:0;z-index:1}
+  .instrow.head:hover{background:#f5f7fa}
+  @media (max-width:560px){.instrow{grid-template-columns:minmax(0,1fr) 46px 70px 84px;font-size:12px;padding:7px 8px;gap:6px}}
+  .instinfo{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+  .instinfo span{font-size:12px;background:#f4f6fa;border-radius:4px;padding:2px 8px;color:var(--text)}
+  .nodeviz{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;align-items:center;padding-top:12px;border-top:1px dashed var(--border)}
+  .node{border:1px solid var(--border-strong);border-radius:6px;padding:5px 10px;font-size:12px;background:#fff;min-width:78px;text-align:center;font-weight:600}
+  .node small{display:block;font-size:10.5px;font-weight:400;color:var(--muted)}
+  .node.active{border-color:var(--primary);background:var(--primary-soft);color:var(--primary)}
+  .node.standby{border-style:dashed;color:var(--text)}
+  .node.ro{background:var(--ok-bg);border-color:var(--ok-border);color:var(--ok)}
+  .node.ro small{color:var(--ok)}
+  .nodeviz .sum{font-size:12.5px;color:var(--muted);margin-left:auto;font-weight:600}
+  .summary{padding:10px 18px;border-bottom:1px solid var(--border);font-size:12.5px;display:flex;flex-wrap:wrap;gap:6px}
+  .summary span{background:#f4f6fa;border-radius:4px;padding:2px 8px;color:var(--text)}
+  .summary span b{color:var(--primary)}
+  .compbar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:#eef1f5;margin:14px 18px 8px}
+  .compbar span{display:block;height:100%}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 12px;padding:0 18px 12px;font-size:11.5px;color:var(--muted)}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle}
+  .subhead{font-size:13px;font-weight:600;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+  .volume{border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;background:#fbfcfe}
+  .volume.disabled{background:#f4f5f7}
+  .volume .banner{font-size:12px;color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:6px;padding:6px 10px;margin-bottom:10px}
+  .tag{display:inline-block;font-size:11px;border-radius:4px;padding:1px 6px;background:#eef2f7;color:var(--muted);font-weight:600}
+  .tag.off{background:#fde8e8;color:var(--danger)}
+  .tag.auto{background:var(--primary-soft);color:var(--primary)}
+
+  .result{position:sticky;top:76px}
+  @media (max-width:1080px){.result{position:static}}
+  .totals{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border)}
+  .total{border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;background:#fbfcfe;min-width:0}
+  .total .lbl{font-size:12px;color:var(--muted);font-weight:600}
+  .total .val{font-size:22px;font-weight:700;margin-top:4px;word-break:break-all;letter-spacing:-.2px}
+  .total .val.na{font-size:16px;color:var(--danger)}
+  .total .sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .alerts{padding:12px 18px 0}
+  .alert{border-radius:6px;padding:9px 12px;font-size:13px;margin-bottom:10px;border:1px solid}
+  .alert.error{background:var(--danger-bg);border-color:var(--danger-border);color:var(--danger)}
+  .alert.warn{background:var(--warn-bg);border-color:var(--warn-border);color:var(--warn)}
+  .alert.ok{background:var(--ok-bg);border-color:var(--ok-border);color:var(--ok)}
+  .alert ul{margin:6px 0 0;padding-left:18px}
+  .alert li{margin:2px 0}
+  details.section{border-top:1px solid var(--border)}
+  details.section summary{cursor:pointer;padding:12px 18px;font-weight:600;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
+  details.section summary::before{content:"";width:6px;height:6px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s;margin-left:2px}
+  details.section[open] summary::before{transform:rotate(45deg)}
+  details.section summary .cnt{margin-left:auto;font-weight:400;color:var(--muted);font-size:12px}
+  details.section .content{padding:0 18px 16px}
+  .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:6px}
+  table.breakdown{width:100%;border-collapse:collapse;font-size:12.5px;min-width:520px}
+  table.breakdown th,table.breakdown td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+  table.breakdown th{background:#f5f7fa;font-weight:600;color:var(--muted);white-space:nowrap;font-size:12px}
+  table.breakdown td.num,table.breakdown th.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  table.breakdown tr.total td{font-weight:700;background:#f8fafc;border-top:2px solid var(--border-strong)}
+  table.breakdown tr.excluded td{color:#8a93a3}
+  table.breakdown .basis{color:var(--muted);font-size:11.5px;display:block;margin-top:2px}
+  .basis-list{list-style:none;margin:0;padding:0}
+  .basis-list li{border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:8px;background:#fbfcfe}
+  .basis-list .t{font-weight:600;font-size:13px;margin-bottom:4px}
+  .basis-list .f{font-family:Consolas,"Courier New",monospace;font-size:12px;background:#f1f3f6;border-radius:4px;padding:6px 8px;margin:4px 0;white-space:pre-wrap;word-break:break-all}
+  .basis-list .n{font-size:12px;color:var(--muted)}
+  .kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:12.5px;margin:0}
+  .kv dt{color:var(--muted)}
+  .kv dd{margin:0}
+  .footnote{font-size:11.5px;color:var(--muted);padding:0 18px 14px}
+
+  /* 관리자 설정 모달 */
+  .modal{position:fixed;inset:0;background:rgba(16,24,40,.45);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
+  .modal-panel{background:var(--card);border-radius:10px;width:min(1280px,100%);height:min(92vh,900px);display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+  .modal-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .modal-head h2{font-size:16px}
+  .modal-head .spacer{flex:1}
+  .modal-body{flex:1;display:flex;min-height:0}
+  .admin-nav{width:200px;border-right:1px solid var(--border);overflow-y:auto;background:#f8fafc;padding:8px;flex-shrink:0}
+  .admin-nav .grp{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:10px 10px 4px}
+  .admin-nav button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:13px}
+  .admin-nav button:hover{background:#eef2f7}
+  .admin-nav button.active{background:var(--primary-soft);color:var(--primary);font-weight:600}
+  .admin-nav button .badge{float:right;background:var(--warn);color:#fff;border-radius:999px;font-size:10px;padding:0 6px;line-height:16px}
+  .admin-content{flex:1;overflow:auto;padding:18px 20px;min-width:0}
+  .admin-content h3{font-size:15px;margin-bottom:4px}
+  .admin-desc{font-size:12.5px;color:var(--muted);margin:0 0 12px}
+  .admin-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  .admin-table-wrap{overflow:auto;border:1px solid var(--border);border-radius:6px;max-width:100%}
+  table.admin{border-collapse:collapse;font-size:12.5px;min-width:100%}
+  table.admin th,table.admin td{border-bottom:1px solid var(--border);padding:5px 6px;text-align:left;vertical-align:middle;white-space:nowrap}
+  table.admin th{background:#f5f7fa;position:sticky;top:0;z-index:1;font-size:12px;color:var(--muted);font-weight:600}
+  table.admin td input[type=text],table.admin td input[type=number],table.admin td input[type=date],table.admin td select{border:1px solid var(--border);border-radius:4px;padding:4px 6px;min-width:80px;width:100%;background:#fff}
+  table.admin td input[type=number]{min-width:90px;text-align:right}
+  table.admin td input[type=date]{min-width:130px}
+  table.admin td.w-text input{min-width:140px}
+  table.admin td.w-wide input{min-width:240px}
+  table.admin td input:focus,table.admin td select:focus{outline:2px solid rgba(31,78,154,.25);border-color:var(--primary)}
+  table.admin td.center{text-align:center}
+  table.admin tr.dup td{background:#fff8f7}
+  .meta-form{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px 18px;max-width:900px}
+  .meta-form .help{font-size:11.5px;color:var(--muted)}
+  .modal-foot{padding:10px 20px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+  textarea.json{width:100%;min-height:260px;font-family:Consolas,"Courier New",monospace;font-size:12px;border:1px solid var(--border-strong);border-radius:6px;padding:10px;resize:vertical}
+  .conflicts{margin-bottom:12px}
+  .empty{color:var(--muted);font-size:13px;padding:14px;text-align:center}
+  @media (max-width:760px){
+    .modal{padding:0}.modal-panel{height:100vh;border-radius:0}
+    .modal-body{flex-direction:column}
+    .admin-nav{width:100%;border-right:0;border-bottom:1px solid var(--border);display:flex;overflow-x:auto;padding:6px;gap:2px}
+    .admin-nav .grp{display:none}
+    .admin-nav button{width:auto;white-space:nowrap}
+    .totals{grid-template-columns:1fr}
+    .topbar-meta{margin-left:0;width:100%}
+  }
+  .sr{position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand"><span class="logo">OwlDB</span><h1>예상 비용 계산기</h1></div>
+    <div class="topbar-meta">
+      <span class="chip" id="chipDate">기준일 <b>...</b></span>
+      <span class="chip" id="chipUpdated">마지막 수정 <b>...</b></span>
+      <button class="btn primary" id="btnAdmin" type="button">관리자 설정</button>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+  <div class="layout">
+    <section class="forms">
+
+      <div class="card">
+        <div class="card-head"><span class="step">1</span><h2>엔진 및 인스턴스</h2><button class="btn sm" id="btnResetInputs" type="button" style="margin-left:auto">입력 초기화</button></div>
+        <div class="card-body">
+          <div class="grid">
+            <div class="field" data-field="csp"><label>사용 CSP<span class="req">*</span></label><div class="seg" id="csp"></div><div class="hint"></div></div>
+            <div class="field" data-field="dbType"><label>DB 유형<span class="req">*</span></label><div class="seg" id="dbType"></div><div class="hint"></div></div>
+            <div class="field" data-field="licenseType" style="grid-column:1/-1"><label>라이선스 유형<span class="req">*</span></label><div class="seg" id="licenseType"></div><div class="hint"></div></div>
+            <div class="field" data-field="topology"><label>구성 방식<span class="req">*</span></label><div class="seg" id="topology"></div><div class="hint"></div></div>
+            <div class="field" data-field="edition"><label>에디션<span class="req">*</span></label><div class="seg" id="edition"></div><div class="hint"></div></div>
+            <div class="field" data-field="baseNodes"><label for="baseNodes">기본 노드 수<span class="req">*</span></label>
+              <div class="stepper"><button type="button" data-stepper="baseNodes" data-step="-1" aria-label="감소">-</button><input id="baseNodes" type="number" min="1" step="1"><button type="button" data-stepper="baseNodes" data-step="1" aria-label="증가">+</button></div><div class="hint"></div></div>
+            <div class="field" data-field="instance" style="grid-column:1/-1"><label for="instSearch">인스턴스 타입<span class="req">*</span></label>
+              <div class="instpicker">
+                <div class="instfilter"><input id="instSearch" type="search" placeholder="인스턴스명 또는 vCPU 검색 (예: r6i, 8)" autocomplete="off"><div class="seg small" id="instFamily"></div></div>
+                <div class="instlist" id="instList" role="listbox"></div>
+              </div>
+              <div class="instinfo" id="instInfo"></div><div class="hint"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="step">2</span><h2>DR 구성</h2></div>
+        <div class="card-body">
+          <div class="grid">
+            <div class="field" data-field="drEnabled"><label>DR 사용 여부</label><div class="seg" id="drEnabled"></div><div class="hint"></div></div>
+            <div class="field" data-field="standbyNodes"><label for="standbyNodes">Standby 노드 수</label>
+              <div class="stepper"><button type="button" data-stepper="standbyNodes" data-step="-1" aria-label="감소">-</button><input id="standbyNodes" type="number" min="0" step="1"><button type="button" data-stepper="standbyNodes" data-step="1" aria-label="증가">+</button></div><div class="hint"></div></div>
+            <div class="field" data-field="readOnlyNodes"><label for="readOnlyNodes">Read Only 노드 수 (Standby 중)</label>
+              <div class="stepper"><button type="button" data-stepper="readOnlyNodes" data-step="-1" aria-label="감소">-</button><input id="readOnlyNodes" type="number" min="0" step="1"><button type="button" data-stepper="readOnlyNodes" data-step="1" aria-label="증가">+</button></div><div class="hint"></div></div>
+          </div>
+          <div class="nodeviz" id="nodeViz"></div>
+          <div class="hint" id="drRuleHint" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="step">3</span><h2>스토리지 구성</h2></div>
+        <div class="card-body">
+          <div id="volumes"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <aside class="result">
+      <div class="card">
+        <div class="card-head"><h2>예상 비용 결과</h2><span class="chip" id="chipCurrency" style="margin-left:auto"></span></div>
+        <div class="summary" id="cfgSummary"></div>
+        <div class="totals">
+          <div class="total"><div class="lbl">시간당 예상 소비자 가격</div><div class="val" id="totHourly">...</div><div class="sub">세부 내역 시간당 금액의 합계</div></div>
+          <div class="total"><div class="lbl">월 예상 소비자 가격</div><div class="val" id="totMonthly">...</div><div class="sub" id="totMonthlySub">월 환산 730시간 기준</div></div>
+        </div>
+        <div id="compWrap" hidden><div class="compbar" id="compBar"></div><div class="legend" id="compLegend"></div></div>
+        <div class="alerts" id="calcAlerts"></div>
+        <details class="section">
+          <summary>비용 구성 상세 내역<span class="cnt" id="breakdownCnt"></span></summary>
+          <div class="content"><div class="table-wrap"><table class="breakdown" id="breakdownTable"></table></div></div>
+        </details>
+        <details class="section" id="basisDetails">
+          <summary>계산 근거 (적용 기준, 계산식, 규칙)</summary>
+          <div class="content" id="basisContent"></div>
+        </details>
+        <div class="footnote" id="resultFoot"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- 관리자 설정 모달 -->
+<div class="modal" id="adminModal" hidden>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+    <div class="modal-head">
+      <h2 id="adminTitle">관리자 설정</h2>
+      <span class="chip" id="adminUpdated"></span>
+      <span class="spacer"></span>
+      <button class="btn" id="btnAdminClose" type="button">닫기</button>
+    </div>
+    <div class="modal-body">
+      <nav class="admin-nav" id="adminNav"></nav>
+      <div class="admin-content" id="adminContent"></div>
+    </div>
+    <div class="modal-foot">
+      <span>변경 사항은 즉시 계산에 반영되고 이 브라우저의 로컬 저장소에 자동 저장됩니다.</span>
+      <span class="spacer" style="flex:1"></span>
+      <span id="adminStatus"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ==========================================================================
+ * 0. 기본 가격 설정 (pricingConfig)
+ *    이 객체가 유일한 가격 및 규칙 데이터 원본입니다. 계산 로직에는 가격 숫자를 두지 않습니다.
+ *    화면의 관리자 설정에서 편집한 결과가 localStorage 에 저장되며, 저장본이 없으면 이 기본값을 사용합니다.
+ * ========================================================================== */
+const STORAGE_KEY = 'owldb-cost-calculator.config.v1';
+const INPUT_KEY   = 'owldb-cost-calculator.inputs.v1';
+
+const DEFAULT_PRICING_CONFIG = {
+  meta: {
+    configName: 'OwlDB 가격표',
+    pricingDate: '2026-09-08',
+    updatedAt: '2026-09-08T09:00:00',
+    currencySymbol: '$',
+    currencyCode: 'USD',
+    hoursPerMonth: 730,
+    hourlyDecimals: 4,
+    monthlyDecimals: 2,
+    roundingMode: 'round',
+    includeReadOnlyInTotalNodes: false
+  },
+  csps: [
+    { id: 'aws',   name: 'AWS',   allowedDbTypes: 'Tibero',         allowedLicenseTypes: 'BYOL,INCLUDED', active: true },
+    { id: 'azure', name: 'Azure', allowedDbTypes: 'Tibero,OpenSQL', allowedLicenseTypes: 'BYOL',          active: true }
+  ],
+  dbTypes: [
+    { id: 'Tibero',  name: 'Tibero',  allowedTopologies: 'Single,TAC', usesRedoVolume: true,  usesArchiveVolume: true,  notice: '' },
+    { id: 'OpenSQL', name: 'OpenSQL', allowedTopologies: 'Single,HA',  usesRedoVolume: false, usesArchiveVolume: false, notice: 'OpenSQL 은 Redo Log 와 Archive Log 를 데이터 볼륨 안에서 관리하므로 별도 볼륨을 구성하지 않으며 비용 계산에서 제외됩니다.' }
+  ],
+  editions: [
+    { id: 'SE', name: 'SE (Standard Edition)' },
+    { id: 'EE', name: 'EE (Enterprise Edition)' }
+  ],
+  priceKinds: [
+    { id: 'db_license',     name: 'DB 라이선스' },
+    { id: 'owldb_metering', name: 'OwlDB 미터링' }
+  ],
+  licenseTypes: [
+    { id: 'BYOL',     name: 'BYOL', chargedPriceKinds: 'owldb_metering', description: '고객 보유 라이선스를 사용하므로 DB 라이선스 비용은 부과하지 않고 OwlDB 미터링(OwlDB Cost)만 부과합니다.', active: true },
+    { id: 'INCLUDED', name: 'LI(라이선스 포함)', chargedPriceKinds: 'db_license,owldb_metering', description: 'DB 라이선스 비용과 OwlDB 미터링 비용을 함께 부과합니다(DBaaS LI Cost). 현재 AWS 에서만 선택할 수 있습니다.', active: true }
+  ],
+  topologies: [
+    { id: 'Single', name: 'Single', minBaseNodes: 1, maxBaseNodes: 1, allowedEditions: 'SE,EE', redoTopologyFactor: 2, storageMode: 'node',    allowedStorageTypes: '', description: '단일 노드 구성. SE 에디션은 Single 구성만 허용. 노드당 스토리지 1세트', active: true },
+    { id: 'HA',     name: 'HA',     minBaseNodes: 1, maxBaseNodes: 1, allowedEditions: 'EE',    redoTopologyFactor: 2, storageMode: 'node',    allowedStorageTypes: '', description: 'OpenSQL 전용. Active 1 노드와 Standby 1 노드, EE 에디션만 허용. 노드당 스토리지 1세트', active: true },
+    { id: 'TAC',    name: 'TAC',    minBaseNodes: 2, maxBaseNodes: 4, allowedEditions: 'EE',    redoTopologyFactor: 4, storageMode: 'cluster', allowedStorageTypes: 'io2,ultra', description: 'Tibero Active Cluster. 기본 노드 2~4, EE 에디션만 허용. 클러스터가 공유 스토리지(io2, ultra) 1세트 사용, DR Standby 는 노드당 1세트', active: true }
+  ],
+  drRules: [
+    { id: 'dr-opensql-single', dbType: 'OpenSQL', topology: 'Single', drAllowed: false, drRequired: false, standbyMin: 0, standbyMax: 0, standbyDefault: 0, readOnlyMax: 0, readOnlyLimitedByStandby: true, memo: 'OpenSQL Single 은 DR 미사용, Standby 0, Read Only 0 만 허용', active: true },
+    { id: 'dr-opensql-ha',     dbType: 'OpenSQL', topology: 'HA',     drAllowed: true,  drRequired: true,  standbyMin: 1, standbyMax: 1, standbyDefault: 1, readOnlyMax: 0, readOnlyLimitedByStandby: true, memo: 'OpenSQL HA 는 DR 사용, Standby 1 고정, Read Only 미지원', active: true },
+    { id: 'dr-default',        dbType: '*',       topology: '*',      drAllowed: true,  drRequired: false, standbyMin: 1, standbyMax: 5, standbyDefault: 1, readOnlyMax: 5, readOnlyLimitedByStandby: true, memo: '기본 규칙(Tibero). DR 사용 시 Standby 1~5, Read Only 는 Standby 수 이하', active: true }
+  ],
+  /* Redo 자동 산정: 엑셀 계산기 기준 MAX(minGb, ROUNDUP(redoFileSizeMb × 3 × 구성계수(Single 2, TAC 4) × 2 × 1.2 / 1024)) */
+  redoSizingRules: [
+    { id: 'redo-tibero', dbType: 'Tibero', formula: 'redoFileSizeMb * redoFileCount * topologyFactor * mirrorFactor * marginRatio / 1024', redoFileCount: 3, mirrorFactor: 2, marginRatio: 1.2, minGb: 10, multipleOf: 1, memo: 'Redo 파일 크기 × 파일 수 3 × 구성 계수 × 다중화 2 × 여유율 1.2, 최소 10 GB, 1 GB 단위 올림', active: true }
+  ],
+  /* 노드 역할별 라이선스 구성 라벨. 라벨은 라이선스 가격표의 "구성" 이름과 일치해야 합니다.
+     nodeRole: base(기본 노드), standby(복구용 Standby), readonly(Read Only 개방 Standby), * (모든 노드) */
+  nodeConfigRules: [
+    { id: 'ncr-tibero-tac',        dbType: 'Tibero',  topology: 'TAC',    edition: '*',  nodeRole: '*',        config: 'EE + TAC',        memo: 'TAC 구성은 Standby 포함 모든 노드를 TAC 로 과금', active: true },
+    { id: 'ncr-tibero-se-base',    dbType: 'Tibero',  topology: 'Single', edition: 'SE', nodeRole: 'base',     config: 'Single(SE)',      memo: '', active: true },
+    { id: 'ncr-tibero-se-standby', dbType: 'Tibero',  topology: 'Single', edition: 'SE', nodeRole: 'standby',  config: 'SE + Standby HA', memo: '', active: true },
+    { id: 'ncr-tibero-se-ro',      dbType: 'Tibero',  topology: 'Single', edition: 'SE', nodeRole: 'readonly', config: 'SE + Active HA',  memo: '', active: true },
+    { id: 'ncr-tibero-ee-base',    dbType: 'Tibero',  topology: 'Single', edition: 'EE', nodeRole: 'base',     config: 'Single(EE)',      memo: '', active: true },
+    { id: 'ncr-tibero-ee-standby', dbType: 'Tibero',  topology: 'Single', edition: 'EE', nodeRole: 'standby',  config: 'Single(EE)',      memo: 'EE 복구용 Standby 는 Single(EE) 단가', active: true },
+    { id: 'ncr-tibero-ee-ro',      dbType: 'Tibero',  topology: 'Single', edition: 'EE', nodeRole: 'readonly', config: 'EE + Active HA',  memo: '', active: true },
+    { id: 'ncr-opensql-ha',        dbType: 'OpenSQL', topology: 'HA',     edition: '*',  nodeRole: '*',        config: 'HA(EE)',          memo: '', active: true },
+    { id: 'ncr-opensql-se',        dbType: 'OpenSQL', topology: 'Single', edition: 'SE', nodeRole: '*',        config: 'Single(SE)',      memo: '', active: true },
+    { id: 'ncr-opensql-ee',        dbType: 'OpenSQL', topology: 'Single', edition: 'EE', nodeRole: '*',        config: 'Single(EE)',      memo: '', active: true }
+  ],
+  /* 인스턴스 목록(엑셀 AWS 가격표, Azure 가격표 기준). 형식: [CSP, 인스턴스명, 시리즈, vCPU, 메모리 GB, 시간당 가격] */
+  instances: [
+    ['aws', 't3.medium', 't3', 2, 4, 0.052], ['aws', 't3.large', 't3', 2, 8, 0.104], ['aws', 't3.xlarge', 't3', 4, 16, 0.208], ['aws', 't3.2xlarge', 't3', 8, 32, 0.416],
+    ['aws', 'm6i.large', 'm6i', 2, 8, 0.118], ['aws', 'm6i.xlarge', 'm6i', 4, 16, 0.236], ['aws', 'm6i.2xlarge', 'm6i', 8, 32, 0.472], ['aws', 'm6i.4xlarge', 'm6i', 16, 64, 0.944], ['aws', 'm6i.8xlarge', 'm6i', 32, 128, 1.888], ['aws', 'm6i.12xlarge', 'm6i', 48, 192, 2.832], ['aws', 'm6i.16xlarge', 'm6i', 64, 256, 3.776], ['aws', 'm6i.24xlarge', 'm6i', 96, 384, 5.664],
+    ['aws', 'r6i.large', 'r6i', 2, 16, 0.152], ['aws', 'r6i.xlarge', 'r6i', 4, 32, 0.304], ['aws', 'r6i.2xlarge', 'r6i', 8, 64, 0.608], ['aws', 'r6i.4xlarge', 'r6i', 16, 128, 1.216], ['aws', 'r6i.8xlarge', 'r6i', 32, 256, 2.432], ['aws', 'r6i.12xlarge', 'r6i', 48, 384, 3.648], ['aws', 'r6i.16xlarge', 'r6i', 64, 512, 4.864], ['aws', 'r6i.24xlarge', 'r6i', 96, 768, 7.296],
+    ['aws', 'r5.large', 'r5', 2, 16, 0.152], ['aws', 'r5.xlarge', 'r5', 4, 32, 0.304], ['aws', 'r5.2xlarge', 'r5', 8, 64, 0.608], ['aws', 'r5.4xlarge', 'r5', 16, 128, 1.216], ['aws', 'r5.8xlarge', 'r5', 32, 256, 2.432], ['aws', 'r5.12xlarge', 'r5', 48, 384, 3.648], ['aws', 'r5.16xlarge', 'r5', 64, 512, 4.864], ['aws', 'r5.24xlarge', 'r5', 96, 768, 7.296],
+    ['azure', 'B2ls V2', 'B V2', 2, 4, 0.052], ['azure', 'B2s V2', 'B V2', 2, 8, 0.104], ['azure', 'B4s V2', 'B V2', 4, 16, 0.208], ['azure', 'B8s V2', 'B V2', 8, 32, 0.416],
+    ['azure', 'D2s V5', 'D V5', 2, 8, 0.118], ['azure', 'D4s V5', 'D V5', 4, 16, 0.236], ['azure', 'D8s V5', 'D V5', 8, 32, 0.472], ['azure', 'D16s V5', 'D V5', 16, 64, 0.944], ['azure', 'D32s V5', 'D V5', 32, 128, 1.888], ['azure', 'D48s V5', 'D V5', 48, 192, 2.832], ['azure', 'D64s V5', 'D V5', 64, 256, 3.776], ['azure', 'D96s V5', 'D V5', 96, 384, 5.664],
+    ['azure', 'E2s v5', 'E v5', 2, 16, 0.152], ['azure', 'E4s v5', 'E v5', 4, 32, 0.304], ['azure', 'E8s v5', 'E v5', 8, 64, 0.608], ['azure', 'E16s v5', 'E v5', 16, 128, 1.216], ['azure', 'E32s v5', 'E v5', 32, 256, 2.432], ['azure', 'E48s v5', 'E v5', 48, 384, 3.648], ['azure', 'E64s v5', 'E v5', 64, 512, 4.864], ['azure', 'E96s v5', 'E v5', 96, 672, 7.296],
+    ['azure', 'E2s v6', 'E v6', 2, 16, 0.16], ['azure', 'E4s v6', 'E v6', 4, 32, 0.319], ['azure', 'E8s v6', 'E v6', 8, 64, 0.638], ['azure', 'E16s v6', 'E v6', 16, 128, 1.277], ['azure', 'E32s v6', 'E v6', 32, 256, 1.596], ['azure', 'E48s v6', 'E v6', 48, 384, 3.8], ['azure', 'E64s v6', 'E v6', 64, 512, 5.107], ['azure', 'E96s v6', 'E v6', 96, 768, 7.661]
+  ].map(([csp, name, family, vcpu, memoryGb, pricePerHour]) => ({ id: `${csp}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`, csp, name, family, vcpu, memoryGb, pricePerHour, startDate: '2026-01-01', endDate: '', memo: '엑셀 가격표 기준(예시)', active: true })),
+  /* 스토리지 유형(엑셀 가격표 기준). 시간 단가가 있으면 그대로 쓰고, 없으면 월 단가 ÷ 월 환산 시간 */
+  storageTypes: [
+    { id: 'aws-gp3',     csp: 'aws',   code: 'gp3',   name: 'General Purpose SSD (gp3)',   pricePerGbMonth: 0.0912,  pricePerGbHour: null,     iopsBillable: true,  mbpsBillable: true,  minGb: 1, maxGb: 16384, minIops: 3000, maxIops: 16000,  minMbps: 125, maxMbps: 1000, startDate: '2026-01-01', endDate: '', memo: '엑셀 AWS 가격표 기준', active: true },
+    { id: 'aws-gp2',     csp: 'aws',   code: 'gp2',   name: 'General Purpose SSD (gp2)',   pricePerGbMonth: 0.114,   pricePerGbHour: null,     iopsBillable: false, mbpsBillable: false, minGb: 1, maxGb: 16384, minIops: 0,    maxIops: null,   minMbps: 0,   maxMbps: null, startDate: '2026-01-01', endDate: '', memo: '엑셀 AWS 가격표 기준. IOPS 와 처리량 별도 과금 없음', active: true },
+    { id: 'aws-io2',     csp: 'aws',   code: 'io2',   name: 'Provisioned IOPS SSD (io2)',  pricePerGbMonth: 0.1278,  pricePerGbHour: null,     iopsBillable: true,  mbpsBillable: false, minGb: 4, maxGb: 65536, minIops: 100,  maxIops: 256000, minMbps: 0,   maxMbps: null, startDate: '2026-01-01', endDate: '', memo: '엑셀 AWS 가격표 기준. TAC 전용 공유 스토리지. 처리량 별도 과금 없음', active: true },
+    { id: 'azure-pv2',   csp: 'azure', code: 'p v2',  name: 'Premium SSD v2',              pricePerGbMonth: 0.092,   pricePerGbHour: 0.000125, iopsBillable: true,  mbpsBillable: true,  minGb: 1, maxGb: 65536, minIops: 3000, maxIops: 80000,  minMbps: 125, maxMbps: 1200, startDate: '2026-01-01', endDate: '', memo: '엑셀 Azure 가격표 기준(시간 단가 0.000125)', active: true },
+    { id: 'azure-ultra', csp: 'azure', code: 'ultra', name: 'Ultra Disk',                  pricePerGbMonth: 0.16133, pricePerGbHour: 0.000221, iopsBillable: true,  mbpsBillable: true,  minGb: 4, maxGb: 65536, minIops: 100,  maxIops: 160000, minMbps: 1,   maxMbps: 4000, startDate: '2026-01-01', endDate: '', memo: '엑셀 Azure 가격표 기준(시간 단가 0.000221)', active: true }
+  ],
+  /* IOPS, Mbps 구간 단가. unit: month(월 단가, 월 환산 시간으로 나눔) 또는 hour(시간 단가 그대로) */
+  iopsTiers: [
+    { id: 'aws-gp3-iops-base', csp: 'aws',   storageType: 'gp3',   from: 0,     to: 3000,  unit: 'month', pricePerUnit: 0,        startDate: '2026-01-01', endDate: '', memo: '기본 제공 구간', active: true },
+    { id: 'aws-gp3-iops-over', csp: 'aws',   storageType: 'gp3',   from: 3000,  to: null,  unit: 'month', pricePerUnit: 0.0057,   startDate: '2026-01-01', endDate: '', memo: '3,001 IOPS 이상', active: true },
+    { id: 'aws-io2-iops-t1',   csp: 'aws',   storageType: 'io2',   from: 0,     to: 32000, unit: 'month', pricePerUnit: 0.067,    startDate: '2026-01-01', endDate: '', memo: '0~32,000 IOPS', active: true },
+    { id: 'aws-io2-iops-t2',   csp: 'aws',   storageType: 'io2',   from: 32000, to: 64000, unit: 'month', pricePerUnit: 0.047,    startDate: '2026-01-01', endDate: '', memo: '32,001~64,000 IOPS', active: true },
+    { id: 'aws-io2-iops-t3',   csp: 'aws',   storageType: 'io2',   from: 64000, to: null,  unit: 'month', pricePerUnit: 0.033,    startDate: '2026-01-01', endDate: '', memo: '64,000 IOPS 초과(엑셀 메모 기준)', active: true },
+    { id: 'az-pv2-iops-base',  csp: 'azure', storageType: 'p v2',  from: 0,     to: 3000,  unit: 'hour',  pricePerUnit: 0,        startDate: '2026-01-01', endDate: '', memo: '기본 제공 구간', active: true },
+    { id: 'az-pv2-iops-over',  csp: 'azure', storageType: 'p v2',  from: 3000,  to: null,  unit: 'hour',  pricePerUnit: 0.000008, startDate: '2026-01-01', endDate: '', memo: '3,001 IOPS 이상, 시간 단가', active: true },
+    { id: 'az-ultra-iops',     csp: 'azure', storageType: 'ultra', from: 0,     to: null,  unit: 'hour',  pricePerUnit: 0.000092, startDate: '2026-01-01', endDate: '', memo: '전 구간 시간 단가', active: true }
+  ],
+  mbpsTiers: [
+    { id: 'aws-gp3-mbps-base', csp: 'aws',   storageType: 'gp3',   from: 0,   to: 125,  unit: 'month', pricePerUnit: 0,        startDate: '2026-01-01', endDate: '', memo: '기본 제공 구간', active: true },
+    { id: 'aws-gp3-mbps-over', csp: 'aws',   storageType: 'gp3',   from: 125, to: null, unit: 'month', pricePerUnit: 0.046,    startDate: '2026-01-01', endDate: '', memo: '126 Mbps 이상', active: true },
+    { id: 'az-pv2-mbps-base',  csp: 'azure', storageType: 'p v2',  from: 0,   to: 125,  unit: 'hour',  pricePerUnit: 0,        startDate: '2026-01-01', endDate: '', memo: '기본 제공 구간', active: true },
+    { id: 'az-pv2-mbps-over',  csp: 'azure', storageType: 'p v2',  from: 125, to: null, unit: 'hour',  pricePerUnit: 0.000063, startDate: '2026-01-01', endDate: '', memo: '126 Mbps 이상, 시간 단가', active: true },
+    { id: 'az-ultra-mbps',     csp: 'azure', storageType: 'ultra', from: 0,   to: null, unit: 'hour',  pricePerUnit: 0.00049,  startDate: '2026-01-01', endDate: '', memo: '전 구간 시간 단가', active: true }
+  ],
+  rootVolumeRules: [
+    { id: 'root-aws',   csp: 'aws',   sizeGbPerNode: 30, pricePerGbMonth: 0.0912, startDate: '2026-01-01', endDate: '', memo: '노드당 30GB, gp3 단가', active: true },
+    { id: 'root-azure', csp: 'azure', sizeGbPerNode: 30, pricePerGbMonth: 0.092,  startDate: '2026-01-01', endDate: '', memo: '노드당 30GB, Premium SSD v2 단가(엑셀은 gp3 단가 사용)', active: true }
+  ],
+  /* 라이선스와 미터링 가격 (엑셀 DB라이선스 가격표의 "분당 가격 × 60 후 Roundup" 표 기준, 노드당 시간 단가).
+     형식: [DB 유형, 구성 라벨, 가격 종류, [2vCPU, 4vCPU, 8vCPU, 16vCPU, 32vCPU]]. null 은 가격 없음('-') */
+  licensePrices: [
+    ['Tibero', 'Single(SE)',      'db_license',     [0.066, 0.138, 0.276, null, null]],
+    ['Tibero', 'Single(SE)',      'owldb_metering', [0.03, 0.06, 0.12, null, null]],
+    ['Tibero', 'SE + Standby HA', 'db_license',     [0.186, 0.24, 0.306, null, null]],
+    ['Tibero', 'SE + Standby HA', 'owldb_metering', [0.078, 0.102, 0.132, null, null]],
+    ['Tibero', 'SE + Active HA',  'db_license',     [0.234, 0.306, 0.384, null, null]],
+    ['Tibero', 'SE + Active HA',  'owldb_metering', [0.102, 0.132, 0.162, null, null]],
+    ['Tibero', 'Single(EE)',      'db_license',     [0.192, 0.252, 0.312, 0.39, 0.486]],
+    ['Tibero', 'Single(EE)',      'owldb_metering', [0.084, 0.108, 0.132, 0.168, 0.21]],
+    ['Tibero', 'EE + Active HA',  'db_license',     [0.264, 0.342, 0.426, 0.534, 0.672]],
+    ['Tibero', 'EE + Active HA',  'owldb_metering', [0.114, 0.144, 0.18, 0.228, 0.288]],
+    ['Tibero', 'EE + TAC',        'db_license',     [null, 0.426, 0.528, 0.66, 0.822]],
+    ['Tibero', 'EE + TAC',        'owldb_metering', [null, 0.18, 0.228, 0.282, 0.354]],
+    ['OpenSQL', 'Single(SE)',     'db_license',     [0.042, 0.084, 0.168, null, null]],
+    ['OpenSQL', 'Single(SE)',     'owldb_metering', [0.018, 0.036, 0.072, null, null]],
+    ['OpenSQL', 'Single(EE)',     'db_license',     [0.06, 0.126, 0.252, 0.312, 0.39]],
+    ['OpenSQL', 'Single(EE)',     'owldb_metering', [0.024, 0.054, 0.108, 0.132, 0.168]],
+    ['OpenSQL', 'HA(EE)',         'db_license',     [0.06, 0.126, 0.252, 0.312, 0.39]],
+    ['OpenSQL', 'HA(EE)',         'owldb_metering', [0.024, 0.054, 0.108, 0.132, 0.168]]
+  ].flatMap(([dbType, config, priceKind, prices]) => prices.map((price, i) => price === null ? null : ({
+    id: `${dbType.toLowerCase()}-${config.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${priceKind === 'db_license' ? 'lic' : 'meter'}-${[2, 4, 8, 16, 32][i]}v`,
+    dbType, config, licenseType: '*', priceKind, vcpu: [2, 4, 8, 16, 32][i], unit: 'node-hour', price, startDate: '2026-01-01', endDate: '', memo: '분당 가격 × 60 환산표 기준', active: true
+  })).filter(Boolean))
+};
+
+const DEFAULT_INPUTS = {
+  csp: 'aws', dbType: 'Tibero', licenseType: 'INCLUDED', topology: 'Single', edition: 'EE', baseNodes: 1, instance: 'aws-r6i-xlarge',
+  drEnabled: false, standbyNodes: 1, readOnlyNodes: 0, redoFileSizeMb: 512,
+  volumes: {
+    data:    { type: 'gp3', sizeGb: 500, iops: 3000, mbps: 125 },
+    redo:    { type: 'gp3', sizeGb: 50,  iops: 3000, mbps: 125, auto: true },
+    archive: { type: 'gp3', sizeGb: 200, iops: 3000, mbps: 125 }
+  }
+};
+
+const VOLUME_DEFS = [
+  { key: 'data',    label: 'Data Volume',        lineLabel: '데이터 볼륨' },
+  { key: 'redo',    label: 'Redo Log Volume',    lineLabel: 'Redo Log 볼륨',    dbFlag: 'usesRedoVolume',    supportsAuto: true },
+  { key: 'archive', label: 'Archive Log Volume', lineLabel: 'Archive Log 볼륨', dbFlag: 'usesArchiveVolume' }
+];
+
+/* 화면 편의용 프리셋 값 (가격 데이터가 아니므로 pricingConfig 에 두지 않음) */
+const PRESETS = { sizeGb: [100, 250, 500, 1000, 2000], iops: [3000, 6000, 12000, 16000], mbps: [125, 250, 500, 1000], redoFileSizeMb: [100, 256, 500, 1024, 2048] };
+const LINE_COLORS = { instance: '#1f4e9a', root: '#7a8aa6', data: '#2f8f5b', redo: '#d19a2a', archive: '#b96d2a', 'lic-db_license': '#6b4fbb', 'lic-owldb_metering': '#2a9db9' };
+
+const LICENSE_UNITS = [
+  { value: 'node-hour', label: '노드당 시간' },
+  { value: 'vcpu-hour', label: 'vCPU당 시간' },
+  { value: 'hour',      label: '시간당 고정' }
+];
+const TIER_UNITS = [{ value: 'month', label: '월 단가' }, { value: 'hour', label: '시간 단가' }];
+const STORAGE_MODES = [{ value: 'node', label: '노드당 1세트' }, { value: 'cluster', label: '클러스터당 1세트 (공유)' }];
+const NODE_ROLES = [{ value: '*', label: '모든 노드 (*)' }, { value: 'base', label: '기본 노드' }, { value: 'standby', label: 'Standby (복구용)' }, { value: 'readonly', label: 'Standby (Read Only)' }];
+
+/* ==========================================================================
+ * 1. 공통 유틸리티
+ * ========================================================================== */
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const deepClone = o => JSON.parse(JSON.stringify(o));
+const pad2 = n => String(n).padStart(2, '0');
+function todayStr() { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+function nowIso() { const d = new Date(); return `${todayStr()}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`; }
+function fmtDateTime(iso) { if (!iso) return '기록 없음'; return String(iso).replace('T', ' ').slice(0, 16); }
+function isBlank(v) { return v === undefined || v === null || v === ''; }
+function toNum(v) { if (isBlank(v)) return null; const n = Number(v); return Number.isFinite(n) ? n : null; }
+function splitList(s) { return String(s ?? '').split(',').map(x => x.trim()).filter(Boolean); }
+function matchWild(ruleVal, val) { return isBlank(ruleVal) || ruleVal === '*' || ruleVal === val; }
+function isEffective(item, date) {
+  if (item.active === false) return false;
+  if (item.startDate && item.startDate > date) return false;
+  if (item.endDate && item.endDate < date) return false;
+  return true;
+}
+function datesOverlap(a, b) {
+  const as = a.startDate || '0000-00-00', ae = a.endDate || '9999-99-99';
+  const bs = b.startDate || '0000-00-00', be = b.endDate || '9999-99-99';
+  return as <= be && bs <= ae;
+}
+function roundTo(v, decimals, mode) {
+  const f = Math.pow(10, decimals), x = v * f, eps = 1e-9;
+  let r;
+  if (mode === 'ceil') r = Math.ceil(x - eps);
+  else if (mode === 'floor') r = Math.floor(x + eps);
+  else r = Math.round(x);
+  return r / f;
+}
+function fmtMoney(v, decimals, cfg) {
+  if (v === null || v === undefined || !Number.isFinite(v)) return '계산 불가';
+  return cfg.meta.currencySymbol + v.toLocaleString('ko-KR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+function fmtNum(v, max = 4) { const n = Number(v); return Number.isFinite(n) ? n.toLocaleString('ko-KR', { maximumFractionDigits: max }) : String(v); }
+function roundingLabel(mode) { return { round: '반올림', ceil: '올림', floor: '내림' }[mode] || mode; }
+
+/* 안전한 수식 계산: 허용된 변수와 Math 함수만 사용 가능 */
+const FORMULA_FUNCS = { max: Math.max, min: Math.min, ceil: Math.ceil, floor: Math.floor, round: Math.round, abs: Math.abs, pow: Math.pow, sqrt: Math.sqrt };
+function evalFormula(formula, vars) {
+  const src = String(formula || '').trim();
+  if (!src) throw new Error('규칙식이 비어 있습니다.');
+  if (/[^A-Za-z0-9_\s+\-*/().,%]/.test(src)) throw new Error('규칙식에 허용되지 않은 문자가 있습니다. 숫자, 사칙연산, 괄호, 변수명만 사용할 수 있습니다.');
+  const ids = src.match(/[A-Za-z_][A-Za-z0-9_]*/g) || [];
+  for (const id of ids) if (!(id in vars) && !(id in FORMULA_FUNCS)) throw new Error(`규칙식에 알 수 없는 변수 또는 함수 '${id}' 가 있습니다.`);
+  const names = [...Object.keys(vars), ...Object.keys(FORMULA_FUNCS)];
+  const values = [...Object.values(vars), ...Object.values(FORMULA_FUNCS)];
+  const fn = new Function(...names, `"use strict"; return (${src});`);
+  const r = fn(...values);
+  if (typeof r !== 'number' || !Number.isFinite(r)) throw new Error('규칙식 계산 결과가 숫자가 아닙니다.');
+  return r;
+}
+
+/* ==========================================================================
+ * 2. 설정 데이터 스키마 (관리자 표 편집, 유효성 검사, 충돌 검사에 공통 사용)
+ *    type: text | number | int | date | select | checkbox
+ * ========================================================================== */
+const OPT_WILD = { value: '*', label: '전체 (*)' };
+const optCsps      = cfg => cfg.csps.map(c => ({ value: c.id, label: c.name }));
+const optDbTypes   = (cfg, wild) => (wild ? [OPT_WILD] : []).concat(cfg.dbTypes.map(d => ({ value: d.id, label: d.name })));
+const optTopos     = (cfg, wild) => (wild ? [OPT_WILD] : []).concat(cfg.topologies.map(t => ({ value: t.id, label: t.name })));
+const optEditions  = (cfg, wild) => (wild ? [OPT_WILD] : []).concat(cfg.editions.map(e => ({ value: e.id, label: e.name })));
+const optLicTypes  = (cfg, wild) => (wild ? [OPT_WILD] : []).concat(cfg.licenseTypes.map(l => ({ value: l.id, label: l.name })));
+const optKinds     = cfg => cfg.priceKinds.map(k => ({ value: k.id, label: k.name }));
+const optStorageOf = (cfg, row) => cfg.storageTypes.filter(s => !row || !row.csp || s.csp === row.csp).map(s => ({ value: s.code, label: `${s.code} (${s.name})` }));
+
+const COMMON_TAIL = [
+  { key: 'startDate', label: '시작일', type: 'date' },
+  { key: 'endDate',   label: '종료일', type: 'date' },
+  { key: 'memo',      label: '메모', type: 'text', wide: true },
+  { key: 'active',    label: '활성', type: 'checkbox' }
+];
+
+const TABLE_SECTIONS = [
+  { key: 'instances', group: '가격', title: 'CSP별 인스턴스', desc: '인스턴스명, vCPU, 메모리, 시간당 가격을 관리합니다. vCPU 수는 라이선스와 미터링 계산에 사용됩니다.',
+    columns: [
+      { key: 'id', label: 'ID', type: 'text', required: true },
+      { key: 'csp', label: 'CSP', type: 'select', options: optCsps, required: true },
+      { key: 'name', label: '인스턴스명', type: 'text', required: true },
+      { key: 'family', label: '시리즈(필터용)', type: 'text' },
+      { key: 'vcpu', label: 'vCPU', type: 'int', required: true, min: 1 },
+      { key: 'memoryGb', label: '메모리(GB)', type: 'number', required: true, min: 0 },
+      { key: 'pricePerHour', label: '시간당 가격', type: 'number', required: true, min: 0, step: 0.0001 },
+      ...COMMON_TAIL ],
+    newRow: cfg => ({ id: 'inst-' + Date.now(), csp: cfg.csps[0]?.id || '', name: '', family: '', vcpu: 2, memoryGb: 8, pricePerHour: 0, startDate: '', endDate: '', memo: '', active: true }) },
+
+  { key: 'storageTypes', group: '가격', title: 'CSP별 스토리지 유형', desc: 'GB당 월 가격과 시간 환산 단가를 관리합니다. 시간 환산 단가를 비우면 월 가격을 월 환산 시간으로 나눈 값을 사용합니다. IOPS 와 Mbps 과금 여부를 끄면 해당 구간 단가가 없어도 0 으로 처리합니다. 최소, 최대 값은 사용자 입력 범위 검증과 안내에 사용되며 비우면 제한하지 않습니다.',
+    columns: [
+      { key: 'id', label: 'ID', type: 'text', required: true },
+      { key: 'csp', label: 'CSP', type: 'select', options: optCsps, required: true },
+      { key: 'code', label: '유형 코드', type: 'text', required: true },
+      { key: 'name', label: '표시 이름', type: 'text', required: true },
+      { key: 'pricePerGbMonth', label: 'GB당 월 가격', type: 'number', required: true, min: 0, step: 0.0001 },
+      { key: 'pricePerGbHour', label: 'GB당 시간 단가(선택)', type: 'number', min: 0, step: 0.0000001 },
+      { key: 'iopsBillable', label: 'IOPS 과금', type: 'checkbox' },
+      { key: 'mbpsBillable', label: 'Mbps 과금', type: 'checkbox' },
+      { key: 'minGb', label: '최소 GB', type: 'number', min: 0 },
+      { key: 'maxGb', label: '최대 GB', type: 'number', min: 0 },
+      { key: 'minIops', label: '최소 IOPS', type: 'number', min: 0 },
+      { key: 'maxIops', label: '최대 IOPS', type: 'number', min: 0 },
+      { key: 'minMbps', label: '최소 Mbps', type: 'number', min: 0 },
+      { key: 'maxMbps', label: '최대 Mbps', type: 'number', min: 0 },
+      ...COMMON_TAIL ],
+    newRow: cfg => ({ id: 'st-' + Date.now(), csp: cfg.csps[0]?.id || '', code: '', name: '', pricePerGbMonth: 0, pricePerGbHour: null, iopsBillable: true, mbpsBillable: true, minGb: 1, maxGb: null, minIops: 0, maxIops: null, minMbps: 0, maxMbps: null, startDate: '', endDate: '', memo: '', active: true }) },
+
+  { key: 'iopsTiers', group: '가격', title: 'IOPS 구간 단가', desc: 'CSP 와 스토리지 유형별 IOPS 누진 구간입니다. 시작 IOPS 는 포함, 종료 IOPS 는 미포함이며 종료를 비우면 무제한 구간입니다. 구간은 0 부터 빈틈없이 이어져야 합니다.',
+    columns: [
+      { key: 'id', label: 'ID', type: 'text', required: true },
+      { key: 'csp', label: 'CSP', type: 'select', options: optCsps, required: true },
+      { key: 'storageType', label: '스토리지 유형', type: 'select', options: optStorageOf, required: true },
+      { key: 'from', label: '시작 IOPS', type: 'number', required: true, min: 0 },
+      { key: 'to', label: '종료 IOPS(빈칸=무제한)', type: 'number', min: 0 },
+      { key: 'unit', label: '단가 단위', type: 'select', options: () => TIER_UNITS, required: true },
+      { key: 'pricePerUnit', label: 'IOPS당 단가', type: 'number', required: true, min: 0, step: 0.000001 },
+      ...COMMON_TAIL ],
+    newRow: cfg => ({ id: 'iops-' + Date.now(), csp: cfg.csps[0]?.id || '', storageType: '', from: 0, to: null, unit: 'month', pricePerUnit: 0, startDate: '', endDate: '', memo: '', active: true }) },
+
+  { key: 'mbpsTiers', group: '가격', title: 'Mbps 구간 단가', desc: 'CSP 와 스토리지 유형별 처리량(Mbps) 누진 구간입니다. 규칙은 IOPS 구간과 같습니다.',
+    columns: [
+      { key: 'id', label: 'ID', type: 'text', required: true },
+      { key: 'csp', label: 'CSP', type: 'select', options: optCsps, required: true },
+      { key: 'storageType', label: '스토리지 유형', type: 'select', options: optStorageOf, required: true },
+      { key: 'from', label: '시작 Mbps', type: 'number', required: true, min: 0 },
+      { key: 'to', label: '종료 Mbps(빈칸=무제한)', type: 'number', min: 0 },
+      { key: 'unit', label: '단가 단위', type: 'select', options: () => TIER_UNITS, required: true },
+      { key: 'pricePerUnit', label: 'Mbps당 단가', type: 'number', required: true, min: 0, step: 0.000001 },
+      ...COMMON_TAIL ],
+    newRow: cfg => ({ id: 'mbps-' + Date.now(), csp: cfg.csps[0]?.id || '', storageType: '', from: 0, to: null, unit: 'month', pricePerUnit: 0, startDate: '', endDate: '', memo: '', active: true }) },
+
+  { key: 'rootVolumeRules', group: '가격', title: '루트 볼륨', desc: 'CSP별 노드당 루트 볼륨 용량과 GB당 월 단가입니다. 루트 볼륨은 총 노드 수만큼 계산됩니다.',
+    columns: [
+      { key: 'id', label: 'ID', type: 'text', required: true },
+      { key: 'csp', label: 'CSP', type: 'select', options: optCsps, required: true },
+      { key: 'sizeGbPerNode', label: '노드당 용량(GB)', type: 'number', required: true, min: 0 },
+      { key: 'pricePerGbMonth', label: 'GB당 월 가격', type: 'number', required: true, min: 0, step: 0.0001 },
+      ...COMMON_TAIL ],
+    newRow: cfg => ({ id: 'root-' + Date.now(), csp: cfg.csps[0]?.id || '', sizeGbPerNode: 30, pricePerGbMonth: 0, startDate: '', endDate: '', memo: '', active: true }) },
+
+  { key: 'licensePrices', group: '가격', title: '라이선스 및 미터링 가격', desc: 'DB 유형, 구성 라벨(예: Single(SE), EE + TAC, HA(EE)), 가격 종류, vCPU 별 노드당 시간 단가입니다. 구성 라벨은 "노드 구성 라벨 규칙" 메뉴에서 노드 역할별로 정해지며, 라벨 이름이 서로 일치해야 합니다. 특정 vCPU 에 가격이 없으면 해당 인스턴스는 선택할 수 없습니다.',
+    columns: [
+      { key: 'id', label: 'ID', type: 'text', required: true },
+      { key: 'dbType', label: 'DB 유형', type: 'select', options: cfg => optDbTypes(cfg, true), required: true },
+      { key: 'config', label: '구성 라벨', type: 'text', required: true },
+      { key: 'priceKind', label: '가격 종류', type: 'select', options: optKinds, required: true },
+      { key: 'licenseType', label: '라이선스 유형', type: 'select', options: cfg => optLicTypes(cfg, true), required: true },
+      { key: 'vcpu', label: 'vCPU', type: 'int', required: true, min: 1 },
+      { key: 'unit', label: '단위', type: 'select', options: () => LICENSE_UNITS, required: true },
+      { key: 'price', label: '단가', type: 'number', required: true, min: 0, step: 0.0001 },
+      ...COMMON_TAIL ],
+    newRow: cfg => ({ id: 'lic-' + Date.now(), dbType: cfg.dbTypes[0]?.id || '*', config: '', priceKind: cfg.priceKinds[0]?.id || '', licenseType: '*', vcpu: 2, unit: 'node-hour', price: 0, startDate: '', endDate: '', memo: '', active: true }) },
+
+  { key: 'nodeConfigRules', group: '규칙', title: '노드 구성 라벨 규칙', desc: 'DB 유형, 구성 방식, 에디션, 노드 역할(기본, 복구용 Standby, Read Only Standby)에 따라 어떤 구성 라벨의 가격을 적용할지 정합니다. 예: Tibero TAC 는 모든 노드가 "EE + TAC", Tibero Single SE 의 Read Only 노드는 "SE + Active HA". 구체적인 조건이 우선합니다.',
+    columns: [
+      { key: 'id', label: 'ID', type: 'text', required: true },
+      { key: 'dbType', label: 'DB 유형', type: 'select', options: cfg => optDbTypes(cfg, true), required: true },
+      { key: 'topology', label: '구성 방식', type: 'select', options: cfg => optTopos(cfg, true), required: true },
+      { key: 'edition', label: '에디션', type: 'select', options: cfg => optEditions(cfg, true), required: true },
+      { key: 'nodeRole', label: '노드 역할', type: 'select', options: () => NODE_ROLES, required: true },
+      { key: 'config', label: '구성 라벨', type: 'text', required: true },
+      { key: 'memo', label: '메모', type: 'text', wide: true },
+      { key: 'active', label: '활성', type: 'checkbox' } ],
+    newRow: () => ({ id: 'ncr-' + Date.now(), dbType: '*', topology: '*', edition: '*', nodeRole: '*', config: '', memo: '', active: true }) },
+
+  { key: 'topologies', group: '규칙', title: '구성 방식과 허용 노드 수', desc: '구성 방식별 기본 노드 수 범위, 허용 에디션(쉼표 구분), Redo 산정 구성 계수를 관리합니다.',
+    columns: [
+      { key: 'id', label: 'ID', type: 'text', required: true },
+      { key: 'name', label: '표시 이름', type: 'text', required: true },
+      { key: 'minBaseNodes', label: '기본 노드 최소', type: 'int', required: true, min: 1 },
+      { key: 'maxBaseNodes', label: '기본 노드 최대', type: 'int', required: true, min: 1 },
+      { key: 'allowedEditions', label: '허용 에디션(쉼표 구분)', type: 'text', required: true },
+      { key: 'redoTopologyFactor', label: 'Redo 구성 계수', type: 'number', required: true, min: 0 },
+      { key: 'storageMode', label: '기본 노드 스토리지', type: 'select', options: () => STORAGE_MODES, required: true },
+      { key: 'allowedStorageTypes', label: '허용 스토리지 유형(쉼표, 비우면 전체)', type: 'text' },
+      { key: 'description', label: '설명', type: 'text', wide: true },
+      { key: 'active', label: '활성', type: 'checkbox' } ],
+    newRow: () => ({ id: 'topo-' + Date.now(), name: '', minBaseNodes: 1, maxBaseNodes: 1, allowedEditions: 'SE,EE', redoTopologyFactor: 2, storageMode: 'node', allowedStorageTypes: '', description: '', active: true }) },
+
+  { key: 'drRules', group: '규칙', title: 'DR 규칙', desc: 'DB 유형과 구성 방식 조합별 DR 허용 여부, Standby 범위, Read Only 상한입니다. 구체적인 조건(전체가 아닌 필드가 많은 규칙)이 우선합니다.',
+    columns: [
+      { key: 'id', label: 'ID', type: 'text', required: true },
+      { key: 'dbType', label: 'DB 유형', type: 'select', options: cfg => optDbTypes(cfg, true), required: true },
+      { key: 'topology', label: '구성 방식', type: 'select', options: cfg => optTopos(cfg, true), required: true },
+      { key: 'drAllowed', label: 'DR 허용', type: 'checkbox' },
+      { key: 'drRequired', label: 'DR 필수', type: 'checkbox' },
+      { key: 'standbyMin', label: 'Standby 최소', type: 'int', required: true, min: 0 },
+      { key: 'standbyMax', label: 'Standby 최대', type: 'int', required: true, min: 0 },
+      { key: 'standbyDefault', label: 'Standby 기본값', type: 'int', required: true, min: 0 },
+      { key: 'readOnlyMax', label: 'Read Only 최대', type: 'int', required: true, min: 0 },
+      { key: 'readOnlyLimitedByStandby', label: 'RO는 Standby 이하', type: 'checkbox' },
+      { key: 'memo', label: '메모', type: 'text', wide: true },
+      { key: 'active', label: '활성', type: 'checkbox' } ],
+    newRow: () => ({ id: 'dr-' + Date.now(), dbType: '*', topology: '*', drAllowed: true, drRequired: false, standbyMin: 1, standbyMax: 5, standbyDefault: 1, readOnlyMax: 5, readOnlyLimitedByStandby: true, memo: '', active: true }) },
+
+  { key: 'redoSizingRules', group: '규칙', title: 'Redo Log 용량 자동 산정 규칙', desc: 'DB 유형별 규칙식입니다. 사용 가능한 변수: redoFileSizeMb, redoFileCount, mirrorFactor, marginRatio, topologyFactor(구성 방식 표의 Redo 구성 계수), dataGb, baseNodes, standbyNodes, readOnlyNodes, totalNodes. 함수: max, min, ceil, floor, round, abs, pow, sqrt. 결과(GB)에 최소 용량을 보장하고 배수 단위로 올림합니다.',
+    columns: [
+      { key: 'id', label: 'ID', type: 'text', required: true },
+      { key: 'dbType', label: 'DB 유형', type: 'select', options: cfg => optDbTypes(cfg, true), required: true },
+      { key: 'formula', label: '규칙식', type: 'text', required: true, wide: true },
+      { key: 'redoFileCount', label: 'redoFileCount', type: 'number', required: true, min: 0 },
+      { key: 'mirrorFactor', label: 'mirrorFactor', type: 'number', required: true, min: 0 },
+      { key: 'marginRatio', label: 'marginRatio', type: 'number', required: true, min: 0, step: 0.01 },
+      { key: 'minGb', label: '최소 용량(GB)', type: 'number', required: true, min: 0 },
+      { key: 'multipleOf', label: '올림 단위(GB)', type: 'number', required: true, min: 0 },
+      { key: 'memo', label: '메모', type: 'text', wide: true },
+      { key: 'active', label: '활성', type: 'checkbox' } ],
+    newRow: () => ({ id: 'redo-' + Date.now(), dbType: '*', formula: 'redoFileSizeMb * redoFileCount * topologyFactor * mirrorFactor * marginRatio / 1024', redoFileCount: 3, mirrorFactor: 2, marginRatio: 1.2, minGb: 10, multipleOf: 1, memo: '', active: true }) },
+
+  { key: 'licenseTypes', group: '규칙', title: '라이선스 유형별 과금 규칙', desc: '라이선스 유형별로 부과할 가격 종류를 쉼표로 나열합니다. 예: BYOL 은 owldb_metering 만 부과합니다.',
+    columns: [
+      { key: 'id', label: 'ID', type: 'text', required: true },
+      { key: 'name', label: '표시 이름', type: 'text', required: true },
+      { key: 'chargedPriceKinds', label: '부과 가격 종류(쉼표 구분)', type: 'text', required: true },
+      { key: 'description', label: '설명', type: 'text', wide: true },
+      { key: 'active', label: '활성', type: 'checkbox' } ],
+    newRow: () => ({ id: 'lt-' + Date.now(), name: '', chargedPriceKinds: 'db_license,owldb_metering', description: '', active: true }) },
+
+  { key: 'dbTypes', group: '규칙', title: 'DB 유형', desc: 'DB 유형별 허용 구성 방식(쉼표 구분, 비우면 전체 허용)과 Redo, Archive 볼륨 사용 여부입니다. 볼륨을 사용하지 않으면 입력이 비활성화되고 비용에서 제외되며 안내 문구가 표시됩니다.',
+    columns: [
+      { key: 'id', label: 'ID', type: 'text', required: true },
+      { key: 'name', label: '표시 이름', type: 'text', required: true },
+      { key: 'allowedTopologies', label: '허용 구성 방식(쉼표 구분)', type: 'text' },
+      { key: 'usesRedoVolume', label: 'Redo 볼륨 사용', type: 'checkbox' },
+      { key: 'usesArchiveVolume', label: 'Archive 볼륨 사용', type: 'checkbox' },
+      { key: 'notice', label: '안내 문구', type: 'text', wide: true } ],
+    newRow: () => ({ id: 'db-' + Date.now(), name: '', allowedTopologies: '', usesRedoVolume: true, usesArchiveVolume: true, notice: '' }) },
+
+  { key: 'priceKinds', group: '규칙', title: '가격 종류', desc: '라이선스 표에서 사용하는 가격 종류(예: DB 라이선스, OwlDB 미터링)입니다.',
+    columns: [
+      { key: 'id', label: 'ID', type: 'text', required: true },
+      { key: 'name', label: '표시 이름', type: 'text', required: true } ],
+    newRow: () => ({ id: 'kind-' + Date.now(), name: '' }) },
+
+  { key: 'editions', group: '규칙', title: '에디션', desc: '선택 가능한 에디션 목록입니다.',
+    columns: [
+      { key: 'id', label: 'ID', type: 'text', required: true },
+      { key: 'name', label: '표시 이름', type: 'text', required: true } ],
+    newRow: () => ({ id: 'ed-' + Date.now(), name: '' }) },
+
+  { key: 'csps', group: '규칙', title: 'CSP 목록', desc: '선택 가능한 CSP 와 CSP 별로 허용하는 DB 유형, 라이선스 유형(쉼표 구분, 비우면 전체)입니다. 예: AWS 는 Tibero 만, Azure 는 BYOL 만 허용.',
+    columns: [
+      { key: 'id', label: 'ID', type: 'text', required: true },
+      { key: 'name', label: '표시 이름', type: 'text', required: true },
+      { key: 'allowedDbTypes', label: '허용 DB 유형(쉼표 구분)', type: 'text' },
+      { key: 'allowedLicenseTypes', label: '허용 라이선스 유형(쉼표 구분)', type: 'text' },
+      { key: 'active', label: '활성', type: 'checkbox' } ],
+    newRow: () => ({ id: 'csp-' + Date.now(), name: '', allowedDbTypes: '', allowedLicenseTypes: '', active: true }) }
+];
+
+const META_FIELDS = [
+  { key: 'configName', label: '설정 이름', type: 'text' },
+  { key: 'pricingDate', label: '현재 설정 기준일', type: 'date', required: true, help: '이 날짜에 유효한(시작일과 종료일 사이) 활성 가격만 계산에 사용합니다.' },
+  { key: 'currencySymbol', label: '통화 기호', type: 'text', required: true },
+  { key: 'currencyCode', label: '통화 코드', type: 'text' },
+  { key: 'hoursPerMonth', label: '월 환산 시간', type: 'number', required: true, min: 1, help: '월 금액 = 시간당 금액 × 월 환산 시간' },
+  { key: 'hourlyDecimals', label: '시간당 금액 소수 자릿수', type: 'int', required: true, min: 0, max: 8 },
+  { key: 'monthlyDecimals', label: '월 금액 소수 자릿수', type: 'int', required: true, min: 0, max: 8 },
+  { key: 'roundingMode', label: '반올림 방식', type: 'select', required: true, options: () => [{ value: 'round', label: '반올림' }, { value: 'ceil', label: '올림' }, { value: 'floor', label: '내림' }] },
+  { key: 'includeReadOnlyInTotalNodes', label: 'Read Only 노드를 Standby 외 추가 노드로 계산', type: 'checkbox', help: '기본 규칙은 Read Only 노드가 Standby 노드에 포함되므로 총 노드 수 = 기본 노드 수 + Standby 노드 수 입니다. 켜면 Read Only 노드를 별도 노드로 더합니다.' }
+];
+
+/* ==========================================================================
+ * 3. 설정 데이터 관리 (불러오기, 저장, 유효성 검사, 충돌 검사, JSON)
+ * ========================================================================== */
+let pricingConfig = deepClone(DEFAULT_PRICING_CONFIG);
+let inputs = deepClone(DEFAULT_INPUTS);
+
+function validateConfig(cfg) {
+  const errors = [];
+  if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) return ['최상위 값이 JSON 객체가 아닙니다.'];
+  if (!cfg.meta || typeof cfg.meta !== 'object') errors.push('meta 객체가 없습니다.');
+  else {
+    for (const f of META_FIELDS) {
+      const v = cfg.meta[f.key];
+      if (f.required && isBlank(v)) { errors.push(`meta.${f.key} (${f.label}) 값이 필요합니다.`); continue; }
+      if (isBlank(v)) continue;
+      errors.push(...checkValue(v, f, `meta.${f.key} (${f.label})`, cfg, null));
+    }
+  }
+  for (const sec of TABLE_SECTIONS) {
+    const rows = cfg[sec.key];
+    if (!Array.isArray(rows)) { errors.push(`${sec.title} (${sec.key}) 배열이 없습니다.`); continue; }
+    const ids = new Set();
+    rows.forEach((row, i) => {
+      const where = `${sec.title} ${i + 1}번째 행`;
+      if (!row || typeof row !== 'object') { errors.push(`${where}: 객체가 아닙니다.`); return; }
+      for (const col of sec.columns) {
+        const v = row[col.key];
+        if (col.required && isBlank(v)) { errors.push(`${where}: '${col.label}' 값이 필요합니다.`); continue; }
+        if (isBlank(v)) continue;
+        errors.push(...checkValue(v, col, `${where} '${col.label}'`, cfg, row));
+      }
+      if (!isBlank(row.id)) { if (ids.has(row.id)) errors.push(`${where}: ID '${row.id}' 가 중복됩니다.`); ids.add(row.id); }
+    });
+  }
+  return errors;
+}
+function checkValue(v, col, where, cfg, row) {
+  const errs = [];
+  switch (col.type) {
+    case 'number': case 'int':
+      if (typeof v !== 'number' || !Number.isFinite(v)) errs.push(`${where}: 숫자여야 합니다. (현재: ${JSON.stringify(v)})`);
+      else {
+        if (col.type === 'int' && !Number.isInteger(v)) errs.push(`${where}: 정수여야 합니다. (현재: ${v})`);
+        if (col.min !== undefined && v < col.min) errs.push(`${where}: ${col.min} 이상이어야 합니다. (현재: ${v})`);
+        if (col.max !== undefined && v > col.max) errs.push(`${where}: ${col.max} 이하여야 합니다. (현재: ${v})`);
+      }
+      break;
+    case 'date':
+      if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) errs.push(`${where}: 날짜는 YYYY-MM-DD 형식이어야 합니다. (현재: ${JSON.stringify(v)})`);
+      break;
+    case 'checkbox':
+      if (typeof v !== 'boolean') errs.push(`${where}: true 또는 false 여야 합니다. (현재: ${JSON.stringify(v)})`);
+      break;
+    case 'select': {
+      let opts = [];
+      try { opts = col.options(cfg, row) || []; } catch (e) { opts = null; }
+      if (opts && !opts.some(o => o.value === v)) errs.push(`${where}: 허용되지 않은 값 '${v}' 입니다. 허용: ${opts.map(o => o.value).join(', ') || '(없음)'}`);
+      break;
+    }
+    default:
+      if (typeof v !== 'string' && typeof v !== 'number') errs.push(`${where}: 문자열이어야 합니다.`);
+  }
+  return errs;
+}
+
+/* 중복, 충돌 검사. 결과는 관리자 화면에 경고로 표시 */
+function detectConflicts(cfg) {
+  const out = []; // {section, message}
+  const add = (section, message) => out.push({ section, message });
+  const activeOf = key => (cfg[key] || []).filter(r => r.active !== false);
+
+  // ID 중복
+  for (const sec of TABLE_SECTIONS) {
+    const seen = {};
+    (cfg[sec.key] || []).forEach(r => { seen[r.id] = (seen[r.id] || 0) + 1; });
+    Object.entries(seen).filter(([, n]) => n > 1).forEach(([id]) => add(sec.key, `ID '${id}' 가 ${seen[id]}개 있습니다.`));
+  }
+  // 인스턴스: 같은 CSP 와 이름이 기간 중복
+  pairwise(activeOf('instances'), (a, b) => a.csp === b.csp && a.name.trim().toLowerCase() === b.name.trim().toLowerCase() && datesOverlap(a, b),
+    (a, b) => add('instances', `인스턴스 '${a.name}' (${a.csp}) 가격이 '${a.id}' 와 '${b.id}' 에서 기간이 겹칩니다.`));
+  pairwise(activeOf('storageTypes'), (a, b) => a.csp === b.csp && a.code === b.code && datesOverlap(a, b),
+    (a, b) => add('storageTypes', `스토리지 유형 '${a.code}' (${a.csp}) 가 '${a.id}' 와 '${b.id}' 에서 기간이 겹칩니다.`));
+  pairwise(activeOf('rootVolumeRules'), (a, b) => a.csp === b.csp && datesOverlap(a, b),
+    (a, b) => add('rootVolumeRules', `루트 볼륨 규칙 '${a.id}' 와 '${b.id}' 가 같은 CSP(${a.csp}) 에서 기간이 겹칩니다.`));
+  for (const key of ['iopsTiers', 'mbpsTiers']) {
+    const rows = activeOf(key);
+    pairwise(rows, (a, b) => a.csp === b.csp && a.storageType === b.storageType && datesOverlap(a, b) && rangeOverlap(a.from, a.to, b.from, b.to),
+      (a, b) => add(key, `구간 '${a.id}' 와 '${b.id}' (${a.csp}/${a.storageType}) 의 범위가 겹칩니다.`));
+    const groups = {};
+    rows.forEach(r => { const g = `${r.csp}/${r.storageType}`; (groups[g] = groups[g] || []).push(r); });
+    for (const [g, list] of Object.entries(groups)) {
+      if (!list.some(r => Number(r.from) === 0)) add(key, `${g} 구간에 0 부터 시작하는 구간이 없습니다.`);
+      if (!list.some(r => isBlank(r.to))) add(key, `${g} 구간에 무제한(종료 빈칸) 구간이 없어 큰 사용량은 계산할 수 없습니다.`);
+    }
+  }
+  const LIC_FIELDS = ['dbType', 'licenseType'], NCR_FIELDS = ['dbType', 'topology', 'edition', 'nodeRole'];
+  pairwise(activeOf('licensePrices'), (a, b) =>
+      a.priceKind === b.priceKind && String(a.config).trim() === String(b.config).trim() && Number(a.vcpu) === Number(b.vcpu) && datesOverlap(a, b) &&
+      wildCompatible(a.dbType, b.dbType) && wildCompatible(a.licenseType, b.licenseType) && specificity(a, LIC_FIELDS) === specificity(b, LIC_FIELDS),
+    (a, b) => add('licensePrices', `라이선스 가격 '${a.id}' 와 '${b.id}' 가 같은 구성 라벨, 가격 종류, vCPU 에 같은 구체성으로 적용되어 충돌합니다.`));
+  pairwise(activeOf('nodeConfigRules'), (a, b) => NCR_FIELDS.every(f => wildCompatible(a[f], b[f])) && specificity(a, NCR_FIELDS) === specificity(b, NCR_FIELDS),
+    (a, b) => add('nodeConfigRules', `노드 구성 라벨 규칙 '${a.id}' 와 '${b.id}' 가 같은 구체성으로 같은 조건에 적용되어 충돌합니다.`));
+  (cfg.nodeConfigRules || []).forEach(r => { if (!(cfg.licensePrices || []).some(p => String(p.config).trim() === String(r.config).trim())) add('nodeConfigRules', `규칙 '${r.id}' 의 구성 라벨 '${r.config}' 에 해당하는 라이선스 가격 항목이 없습니다.`); });
+  (cfg.csps || []).forEach(c => splitList(c.allowedLicenseTypes).forEach(l => { if (!(cfg.licenseTypes || []).some(x => x.id === l)) add('csps', `CSP '${c.id}' 의 허용 라이선스 유형 '${l}' 가 라이선스 유형 목록에 없습니다.`); }));
+  (cfg.csps || []).forEach(c => splitList(c.allowedDbTypes).forEach(d => { if (!(cfg.dbTypes || []).some(x => x.id === d)) add('csps', `CSP '${c.id}' 의 허용 DB 유형 '${d}' 가 DB 유형 목록에 없습니다.`); }));
+  (cfg.topologies || []).forEach(t => splitList(t.allowedStorageTypes).forEach(s => { if (!(cfg.storageTypes || []).some(x => x.code === s)) add('topologies', `구성 방식 '${t.id}' 의 허용 스토리지 유형 '${s}' 가 스토리지 유형 목록에 없습니다.`); }));
+  pairwise(activeOf('drRules'), (a, b) => a.dbType === b.dbType && a.topology === b.topology,
+    (a, b) => add('drRules', `DR 규칙 '${a.id}' 와 '${b.id}' 의 조건(DB 유형, 구성 방식)이 같습니다.`));
+  pairwise(activeOf('redoSizingRules'), (a, b) => a.dbType === b.dbType,
+    (a, b) => add('redoSizingRules', `Redo 산정 규칙 '${a.id}' 와 '${b.id}' 의 DB 유형이 같습니다.`));
+  (cfg.topologies || []).forEach(t => { if (Number(t.minBaseNodes) > Number(t.maxBaseNodes)) add('topologies', `구성 방식 '${t.id}' 의 기본 노드 최소가 최대보다 큽니다.`); });
+  (cfg.drRules || []).forEach(r => {
+    if (Number(r.standbyMin) > Number(r.standbyMax)) add('drRules', `DR 규칙 '${r.id}' 의 Standby 최소가 최대보다 큽니다.`);
+    if (Number(r.standbyDefault) < Number(r.standbyMin) || Number(r.standbyDefault) > Number(r.standbyMax)) add('drRules', `DR 규칙 '${r.id}' 의 Standby 기본값이 범위를 벗어납니다.`);
+  });
+  (cfg.licenseTypes || []).forEach(lt => splitList(lt.chargedPriceKinds).forEach(k => { if (!(cfg.priceKinds || []).some(p => p.id === k)) add('licenseTypes', `라이선스 유형 '${lt.id}' 의 가격 종류 '${k}' 가 가격 종류 목록에 없습니다.`); }));
+  (cfg.topologies || []).forEach(t => splitList(t.allowedEditions).forEach(e => { if (!(cfg.editions || []).some(x => x.id === e)) add('topologies', `구성 방식 '${t.id}' 의 허용 에디션 '${e}' 가 에디션 목록에 없습니다.`); }));
+  (cfg.dbTypes || []).forEach(d => splitList(d.allowedTopologies).forEach(t => { if (!(cfg.topologies || []).some(x => x.id === t)) add('dbTypes', `DB 유형 '${d.id}' 의 허용 구성 방식 '${t}' 가 구성 방식 목록에 없습니다.`); }));
+  (cfg.redoSizingRules || []).forEach(r => { try { evalFormula(r.formula, { dataGb: 1, redoFileSizeMb: 1, baseNodes: 1, standbyNodes: 0, readOnlyNodes: 0, totalNodes: 1, topologyFactor: 1, redoFileCount: 1, mirrorFactor: 1, marginRatio: 1 }); } catch (e) { add('redoSizingRules', `Redo 산정 규칙 '${r.id}': ${e.message}`); } });
+  return out;
+}
+function pairwise(list, test, onHit) { for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) if (test(list[i], list[j])) onHit(list[i], list[j]); }
+function rangeOverlap(aFrom, aTo, bFrom, bTo) { const aE = isBlank(aTo) ? Infinity : Number(aTo), bE = isBlank(bTo) ? Infinity : Number(bTo); return Number(aFrom) < bE && Number(bFrom) < aE; }
+function wildCompatible(a, b) { return a === '*' || b === '*' || isBlank(a) || isBlank(b) || a === b; }
+function specificity(item, fields = ['dbType', 'licenseType', 'topology', 'edition']) { return fields.filter(f => !isBlank(item[f]) && item[f] !== '*').length; }
+
+function loadConfig() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const errs = validateConfig(parsed);
+      if (!errs.length) { pricingConfig = parsed; return { source: 'local' }; }
+      console.warn('저장된 설정이 유효하지 않아 기본 설정을 사용합니다.', errs);
+      return { source: 'default', warning: `저장된 설정에 오류가 있어 기본 설정을 사용합니다. (${errs[0]})` };
+    }
+  } catch (e) { console.warn('설정 불러오기 실패', e); }
+  pricingConfig = deepClone(DEFAULT_PRICING_CONFIG);
+  return { source: 'default' };
+}
+function saveConfig(touch = true) {
+  if (touch) pricingConfig.meta.updatedAt = nowIso();
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(pricingConfig)); } catch (e) { console.warn('설정 저장 실패', e); }
+}
+function loadInputs() {
+  try { const raw = localStorage.getItem(INPUT_KEY); if (raw) { const p = JSON.parse(raw); if (p && p.volumes) inputs = Object.assign(deepClone(DEFAULT_INPUTS), p); } } catch (e) { /* 무시 */ }
+}
+function saveInputs() { try { localStorage.setItem(INPUT_KEY, JSON.stringify(inputs)); } catch (e) { /* 무시 */ } }
+function exportConfigJson() { return JSON.stringify(pricingConfig, null, 2); }
+function importConfigJson(text) {
+  let parsed;
+  try { parsed = JSON.parse(text); } catch (e) { return { ok: false, errors: [`JSON 구문 오류: ${e.message}`] }; }
+  const errors = validateConfig(parsed);
+  if (errors.length) return { ok: false, errors };
+  pricingConfig = parsed;
+  saveConfig(true);
+  return { ok: true, errors: [] };
+}
+function resetConfig() { pricingConfig = deepClone(DEFAULT_PRICING_CONFIG); saveConfig(true); }
+
+/* ==========================================================================
+ * 4. 규칙 조회
+ * ========================================================================== */
+function pricingDate() { return pricingConfig.meta.pricingDate || todayStr(); }
+function getCsp(id) { return pricingConfig.csps.find(c => c.id === id && c.active !== false); }
+function getDbType(id) { return pricingConfig.dbTypes.find(d => d.id === id); }
+function getTopology(id) { return pricingConfig.topologies.find(t => t.id === id && t.active !== false); }
+function getLicenseType(id) { return pricingConfig.licenseTypes.find(l => l.id === id && l.active !== false); }
+function getInstance(id, csp) { return pricingConfig.instances.find(i => i.id === id && (!csp || i.csp === csp)); }
+function effectiveInstances(csp) { return pricingConfig.instances.filter(i => i.csp === csp && isEffective(i, pricingDate())); }
+function effectiveStorageTypes(csp) { return pricingConfig.storageTypes.filter(s => s.csp === csp && isEffective(s, pricingDate())); }
+
+/* 와일드카드 규칙 중 가장 구체적인 항목 선택. 동률이면 conflict */
+function pickMostSpecific(items, fields, ctx) {
+  const matched = items.filter(it => fields.every(f => matchWild(it[f], ctx[f])));
+  if (!matched.length) return { item: null, matched: [], conflict: [] };
+  const score = it => fields.filter(f => !isBlank(it[f]) && it[f] !== '*').length;
+  matched.sort((a, b) => score(b) - score(a));
+  const top = score(matched[0]);
+  const ties = matched.filter(m => score(m) === top);
+  return { item: matched[0], matched, conflict: ties.length > 1 ? ties : [] };
+}
+function findDrRule(dbType, topology) {
+  return pickMostSpecific(pricingConfig.drRules.filter(r => r.active !== false), ['dbType', 'topology'], { dbType, topology });
+}
+function findRedoRule(dbType) {
+  return pickMostSpecific(pricingConfig.redoSizingRules.filter(r => r.active !== false), ['dbType'], { dbType });
+}
+/* DB 유형별 허용 구성 방식. 비어 있으면 null (전체 허용) */
+function dbAllowedTopologies(dbType) {
+  const db = getDbType(dbType);
+  const list = db ? splitList(db.allowedTopologies) : [];
+  return list.length ? list : null;
+}
+/* CSP 별 허용 DB 유형. 비어 있으면 null (전체 허용) */
+function cspAllowedDbTypes(cspId) {
+  const c = pricingConfig.csps.find(x => x.id === cspId);
+  const list = c ? splitList(c.allowedDbTypes) : [];
+  return list.length ? list : null;
+}
+/* CSP 별 허용 라이선스 유형. 비어 있으면 null (전체 허용) */
+function cspAllowedLicenseTypes(cspId) {
+  const c = pricingConfig.csps.find(x => x.id === cspId);
+  const list = c ? splitList(c.allowedLicenseTypes) : [];
+  return list.length ? list : null;
+}
+/* 구성 방식별 허용 스토리지 유형 코드. 비어 있으면 null (전체 허용) */
+function topologyAllowedStorage(topoId) {
+  const t = getTopology(topoId);
+  const list = t ? splitList(t.allowedStorageTypes) : [];
+  return list.length ? list : null;
+}
+/* 노드 역할에 적용되는 구성 라벨 규칙 */
+function findNodeConfig(inp, nodeRole) {
+  return pickMostSpecific(pricingConfig.nodeConfigRules.filter(r => r.active !== false), ['dbType', 'topology', 'edition', 'nodeRole'], { dbType: inp.dbType, topology: inp.topology, edition: inp.edition, nodeRole });
+}
+/* 구성 라벨, 가격 종류, vCPU 에 맞는 라이선스 가격 */
+function findLicensePrice(inp, kind, config, vcpu) {
+  const cands = pricingConfig.licensePrices.filter(p => p.priceKind === kind && String(p.config).trim() === String(config).trim() && Number(p.vcpu) === Number(vcpu) && isEffective(p, pricingDate()));
+  return pickMostSpecific(cands, ['dbType', 'licenseType'], { dbType: inp.dbType, licenseType: inp.licenseType });
+}
+/* 인스턴스가 현재 구성(기본 노드 라벨)에서 라이선스 가격을 갖는지 */
+function instanceHasPrice(inst, inp) {
+  const lt = getLicenseType(inp.licenseType); if (!lt) return true;
+  const base = findNodeConfig(inp, 'base'); if (!base.item || base.conflict.length) return true;
+  return splitList(lt.chargedPriceKinds).every(kind => { const r = findLicensePrice(inp, kind, base.item.config, inst.vcpu); return !!r.item; });
+}
+function volumeEnabled(volDef, dbType) {
+  if (!volDef.dbFlag) return true;
+  const db = getDbType(dbType);
+  return db ? db[volDef.dbFlag] !== false : true;
+}
+
+/* 입력에 적용되는 제약 조건 도출 (화면 비활성화, 범위, 강제값) */
+function deriveConstraints(inp) {
+  const c = { dr: {}, topo: getTopology(inp.topology), notes: [] };
+  const dr = findDrRule(inp.dbType, inp.topology);
+  c.dr.rule = dr.item;
+  c.dr.conflict = dr.conflict;
+  if (dr.item) {
+    const r = dr.item;
+    c.dr.allowed = r.drAllowed !== false;
+    c.dr.required = !!r.drRequired && c.dr.allowed;
+    c.dr.forcedEnabled = !c.dr.allowed ? false : (c.dr.required ? true : null);
+    c.dr.standbyMin = Number(r.standbyMin); c.dr.standbyMax = Number(r.standbyMax); c.dr.standbyDefault = Number(r.standbyDefault);
+    c.dr.readOnlyMax = Number(r.readOnlyMax); c.dr.roByStandby = r.readOnlyLimitedByStandby !== false;
+  }
+  return c;
+}
+/* 규칙이 바뀌었을 때 강제값과 기본값 적용 */
+function applyRuleDefaults(inp, clampNodes) {
+  const c = deriveConstraints(inp);
+  if (c.dr.rule) {
+    if (c.dr.forcedEnabled !== null && c.dr.forcedEnabled !== undefined) inp.drEnabled = c.dr.forcedEnabled;
+    if (clampNodes && inp.drEnabled) {
+      if (inp.standbyNodes < c.dr.standbyMin || inp.standbyNodes > c.dr.standbyMax) inp.standbyNodes = c.dr.standbyDefault;
+      const roMax = Math.min(c.dr.readOnlyMax, c.dr.roByStandby ? inp.standbyNodes : Infinity);
+      if (inp.readOnlyNodes > roMax) inp.readOnlyNodes = roMax;
+    }
+  }
+  if (clampNodes && c.topo) {
+    if (inp.baseNodes < c.topo.minBaseNodes) inp.baseNodes = c.topo.minBaseNodes;
+    if (inp.baseNodes > c.topo.maxBaseNodes) inp.baseNodes = c.topo.maxBaseNodes;
+  }
+  return c;
+}
+
+/* ==========================================================================
+ * 5. 입력 검증
+ * ========================================================================== */
+function validateInputs(inp) {
+  const errors = {}; const warns = {};
+  const c = deriveConstraints(inp);
+  if (!getCsp(inp.csp)) errors.csp = '활성화된 CSP 를 선택하세요.';
+  if (!getDbType(inp.dbType)) errors.dbType = 'DB 유형을 선택하세요.';
+  else {
+    const allowedDb = cspAllowedDbTypes(inp.csp);
+    if (allowedDb && !allowedDb.includes(inp.dbType)) errors.dbType = `${getCsp(inp.csp)?.name || inp.csp} 은 ${allowedDb.join(', ')} 만 지원합니다.`;
+  }
+  if (!getLicenseType(inp.licenseType)) errors.licenseType = '라이선스 유형을 선택하세요.';
+  else {
+    const allowedLt = cspAllowedLicenseTypes(inp.csp);
+    if (allowedLt && !allowedLt.includes(inp.licenseType)) errors.licenseType = `${getCsp(inp.csp)?.name || inp.csp} 은 ${allowedLt.map(id => getLicenseType(id)?.name || id).join(', ')} 라이선스 유형만 지원합니다.`;
+  }
+  if (!c.topo) errors.topology = '구성 방식을 선택하세요.';
+  else {
+    const allowedTopos = dbAllowedTopologies(inp.dbType);
+    if (allowedTopos && !allowedTopos.includes(inp.topology)) errors.topology = `${inp.dbType} 은 ${allowedTopos.join(', ')} 구성만 지원합니다.`;
+    const allowed = splitList(c.topo.allowedEditions);
+    if (!allowed.includes(inp.edition)) errors.edition = `${c.topo.name} 구성은 ${allowed.join(', ') || '(허용 에디션 없음)'} 에디션만 허용합니다.`;
+    const n = toNum(inp.baseNodes);
+    if (n === null || !Number.isInteger(n)) errors.baseNodes = '기본 노드 수를 정수로 입력하세요.';
+    else if (n < c.topo.minBaseNodes || n > c.topo.maxBaseNodes) {
+      errors.baseNodes = c.topo.minBaseNodes === c.topo.maxBaseNodes ? `${c.topo.name} 구성의 기본 노드 수는 ${c.topo.minBaseNodes} 이어야 합니다.` : `${c.topo.name} 구성의 기본 노드 수는 ${c.topo.minBaseNodes}~${c.topo.maxBaseNodes} 만 허용합니다.`;
+    }
+  }
+  if (!pricingConfig.editions.some(e => e.id === inp.edition)) errors.edition = '에디션을 선택하세요.';
+  const inst = getInstance(inp.instance, inp.csp);
+  if (!inst) errors.instance = '인스턴스 타입을 선택하세요.';
+  else if (!isEffective(inst, pricingDate())) errors.instance = `인스턴스 '${inst.name}' 은 기준일(${pricingDate()})에 유효한 가격이 아닙니다.`;
+
+  // DR
+  if (c.dr.conflict.length) errors.drEnabled = `DR 규칙이 충돌합니다: ${c.dr.conflict.map(r => r.id).join(', ')}. 관리자 설정에서 정리하세요.`;
+  else if (!c.dr.rule) errors.drEnabled = `${inp.dbType} ${inp.topology} 조합에 적용할 DR 규칙이 없습니다.`;
+  else {
+    const d = c.dr;
+    if (!d.allowed && inp.drEnabled) errors.drEnabled = `${inp.dbType} ${inp.topology} 구성은 DR 을 지원하지 않습니다.`;
+    if (d.required && !inp.drEnabled) errors.drEnabled = `${inp.dbType} ${inp.topology} 구성은 DR 사용이 필수입니다.`;
+    if (inp.drEnabled) {
+      const sb = toNum(inp.standbyNodes), ro = toNum(inp.readOnlyNodes);
+      if (sb === null || !Number.isInteger(sb)) errors.standbyNodes = 'Standby 노드 수를 정수로 입력하세요.';
+      else if (sb < d.standbyMin || sb > d.standbyMax) errors.standbyNodes = d.standbyMin === d.standbyMax ? `Standby 노드 수는 ${d.standbyMin} 이어야 합니다.` : `Standby 노드 수는 ${d.standbyMin}~${d.standbyMax} 만 허용합니다.`;
+      if (ro === null || !Number.isInteger(ro)) errors.readOnlyNodes = 'Read Only 노드 수를 정수로 입력하세요.';
+      else {
+        if (ro > d.readOnlyMax) errors.readOnlyNodes = `Read Only 노드 수는 최대 ${d.readOnlyMax} 입니다.`;
+        if (d.roByStandby && sb !== null && ro > sb) errors.readOnlyNodes = `Read Only 노드 수는 Standby 노드 수(${sb}) 이하만 허용합니다.`;
+      }
+    }
+  }
+  // 스토리지
+  for (const vd of VOLUME_DEFS) {
+    if (!volumeEnabled(vd, inp.dbType)) continue;
+    const v = inp.volumes[vd.key];
+    const st = effectiveStorageTypes(inp.csp).find(s => s.code === v.type);
+    if (!st) errors[`${vd.key}_type`] = `${getCsp(inp.csp)?.name || inp.csp} 에 등록된 스토리지 유형을 선택하세요.`;
+    else {
+      const allowedSt = topologyAllowedStorage(inp.topology);
+      if (allowedSt && !allowedSt.includes(st.code)) errors[`${vd.key}_type`] = `${c.topo?.name || inp.topology} 구성은 ${allowedSt.join(', ')} 스토리지 유형만 사용할 수 있습니다.`;
+    }
+    const size = toNum(v.sizeGb);
+    if (size === null || size <= 0) errors[`${vd.key}_sizeGb`] = '용량(GB)은 0 보다 큰 값을 입력하세요.';
+    const iops = toNum(v.iops), mbps = toNum(v.mbps);
+    if (iops === null || iops < 0) errors[`${vd.key}_iops`] = 'IOPS 는 0 이상이어야 합니다.';
+    if (mbps === null || mbps < 0) errors[`${vd.key}_mbps`] = 'Mbps 는 0 이상이어야 합니다.';
+    if (st) {
+      const rangeErr = (val, min, max, label, unit) => {
+        if (val === null) return null;
+        if (!isBlank(min) && val < Number(min)) return `${st.code} 의 ${label} 최소값은 ${fmtNum(min)} ${unit} 입니다.`;
+        if (!isBlank(max) && val > Number(max)) return `${st.code} 의 ${label} 최대값은 ${fmtNum(max)} ${unit} 입니다.`;
+        return null;
+      };
+      const e1 = rangeErr(size, st.minGb, st.maxGb, '용량', 'GB'); if (e1 && !errors[`${vd.key}_sizeGb`]) errors[`${vd.key}_sizeGb`] = e1;
+      const e2 = rangeErr(iops, st.minIops, st.maxIops, 'IOPS', 'IOPS'); if (e2 && !errors[`${vd.key}_iops`]) errors[`${vd.key}_iops`] = e2;
+      const e3 = rangeErr(mbps, st.minMbps, st.maxMbps, '처리량', 'Mbps'); if (e3 && !errors[`${vd.key}_mbps`]) errors[`${vd.key}_mbps`] = e3;
+    }
+  }
+  const rf = toNum(inp.redoFileSizeMb);
+  if (volumeEnabled(VOLUME_DEFS[1], inp.dbType) && (rf === null || rf <= 0)) errors.redoFileSizeMb = 'Redo Log File Size 는 0 보다 큰 값을 입력하세요.';
+  return { errors, warns, constraints: c };
+}
+
+/* ==========================================================================
+ * 6. 계산 로직
+ * ========================================================================== */
+function effectiveNodeCounts(inp) {
+  const base = Math.max(0, toNum(inp.baseNodes) || 0);
+  const standby = inp.drEnabled ? Math.max(0, toNum(inp.standbyNodes) || 0) : 0;
+  const readOnly = inp.drEnabled ? Math.max(0, toNum(inp.readOnlyNodes) || 0) : 0;
+  const total = base + standby + (pricingConfig.meta.includeReadOnlyInTotalNodes ? readOnly : 0);
+  return { base, standby, readOnly, total };
+}
+
+/* Redo 용량 자동 산정. 결과 {gb, rule, steps, error} */
+function computeRedoSize(inp) {
+  const found = findRedoRule(inp.dbType);
+  if (found.conflict.length) return { error: `Redo 산정 규칙이 충돌합니다: ${found.conflict.map(r => r.id).join(', ')}` };
+  const rule = found.item;
+  if (!rule) return { error: `${inp.dbType} 에 적용할 Redo Log 용량 산정 규칙이 없습니다.` };
+  const nodes = effectiveNodeCounts(inp);
+  const topo = getTopology(inp.topology);
+  const vars = {
+    dataGb: toNum(inp.volumes.data.sizeGb) || 0, redoFileSizeMb: toNum(inp.redoFileSizeMb) || 0,
+    baseNodes: nodes.base, standbyNodes: nodes.standby, readOnlyNodes: nodes.readOnly, totalNodes: nodes.total,
+    topologyFactor: topo ? Number(topo.redoTopologyFactor) : 1, redoFileCount: Number(rule.redoFileCount), mirrorFactor: Number(rule.mirrorFactor), marginRatio: Number(rule.marginRatio)
+  };
+  try {
+    const raw = evalFormula(rule.formula, vars);
+    const withMin = Math.max(Number(rule.minGb) || 0, raw);
+    const mult = Number(rule.multipleOf) || 0;
+    const gb = mult > 0 ? Math.ceil(withMin / mult - 1e-9) * mult : withMin;
+    return { gb, rule, vars, raw, withMin };
+  } catch (e) { return { error: `Redo 산정 규칙 '${rule.id}' 오류: ${e.message}`, rule }; }
+}
+
+/* 누진 구간 계산. usage 를 [from,to) 구간에 차례로 배분. 월 단가 구간은 월 환산 시간으로 나눠 시간당 금액으로 환산 */
+function calcTiered(tiers, usage, unitLabel, H) {
+  const sorted = tiers.slice().sort((a, b) => Number(a.from) - Number(b.from));
+  const steps = []; let costHour = 0; let covered = 0;
+  for (const t of sorted) {
+    const lo = Number(t.from), hi = isBlank(t.to) ? Infinity : Number(t.to);
+    if (lo > covered + 1e-9) break; // 빈틈
+    const upper = Math.min(usage, hi);
+    const qty = Math.max(0, upper - Math.max(lo, covered));
+    if (qty > 0) {
+      const price = Number(t.pricePerUnit), hourly = t.unit === 'hour' ? qty * price : qty * price / H;
+      steps.push({ tier: t, lo, hi, qty, price, unit: t.unit, hour: hourly }); costHour += hourly;
+    }
+    covered = Math.max(covered, upper);
+    if (covered >= usage) break;
+  }
+  const uncovered = usage > covered + 1e-9 ? { from: covered, to: usage } : null;
+  const text = steps.length ? steps.map(s => `${fmtNum(s.qty)} ${unitLabel} × ${s.price}${s.unit === 'hour' ? '/시간' : `/월 ÷ ${H}h`}`).join(' + ') : `0 ${unitLabel}`;
+  return { steps, costHour, uncovered, text };
+}
+
+function calcVolume(vd, inp, nodes, H, errors) {
+  const v = inp.volumes[vd.key];
+  const cspName = getCsp(inp.csp)?.name || inp.csp;
+  const st = effectiveStorageTypes(inp.csp).find(s => s.code === v.type);
+  if (!st) { errors.push(`${vd.label}: ${cspName} 에 '${v.type || '(미선택)'}' 스토리지 유형 가격이 등록되어 있지 않습니다.`); return null; }
+  const sizeGb = toNum(v.sizeGb) || 0, iops = toNum(v.iops) || 0, mbps = toNum(v.mbps) || 0;
+  const gbHour = !isBlank(st.pricePerGbHour) ? Number(st.pricePerGbHour) : Number(st.pricePerGbMonth) / H;
+  const gbCostHour = sizeGb * gbHour;
+  const parts = [{ label: '용량', text: `${fmtNum(sizeGb)} GB × ${fmtNum(gbHour, 8)}/GB·시간${isBlank(st.pricePerGbHour) ? ` (${st.pricePerGbMonth}/GB·월 ÷ ${H}h)` : ''}`, hour: gbCostHour }];
+  let ok = true;
+  for (const [flag, key, usage, unit, label] of [['iopsBillable', 'iopsTiers', iops, 'IOPS', 'IOPS'], ['mbpsBillable', 'mbpsTiers', mbps, 'Mbps', '처리량']]) {
+    if (st[flag] === false) { parts.push({ label, text: `${fmtNum(usage)} ${unit} (이 스토리지 유형은 ${unit} 별도 과금 없음)`, hour: 0 }); continue; }
+    const tiers = pricingConfig[key].filter(t => t.csp === inp.csp && t.storageType === st.code && isEffective(t, pricingDate()));
+    if (!tiers.length) { errors.push(`${vd.label}: ${cspName} / ${st.code} 의 ${unit} 구간 단가가 등록되어 있지 않습니다. (필요 사용량 ${fmtNum(usage)} ${unit})`); ok = false; continue; }
+    const r = calcTiered(tiers, usage, unit, H);
+    if (r.uncovered) { errors.push(`${vd.label}: ${cspName} / ${st.code} 의 ${unit} 구간이 ${fmtNum(r.uncovered.from)}~${fmtNum(r.uncovered.to)} ${unit} 범위를 포함하지 않습니다. 등록 구간: ${tiers.map(t => `${t.from}~${isBlank(t.to) ? '무제한' : t.to}`).join(', ')}`); ok = false; continue; }
+    parts.push({ label, text: r.text, hour: r.costHour, steps: r.steps });
+  }
+  if (!ok) return null;
+  const perSet = parts.reduce((s, p) => s + p.hour, 0);
+  const sets = storageSets(inp, nodes);
+  return {
+    key: vd.key, label: vd.lineLabel,
+    basis: `${cspName} ${st.code} ${fmtNum(sizeGb)} GB, ${fmtNum(iops)} IOPS, ${fmtNum(mbps)} Mbps × ${sets.count} 세트 (${sets.text})`,
+    qty: `${fmtNum(sizeGb)} GB × ${sets.count} 세트`,
+    unitPrice: `${st.pricePerGbMonth}/GB·월${st.iopsBillable !== false || st.mbpsBillable !== false ? ' + 구간 단가' : ''}`,
+    formula: `(${parts.map(p => `${p.label}: ${p.text}`).join(' + ')}) × ${sets.count} 세트`,
+    parts, rawHourly: perSet * sets.count,
+    notes: [st.memo].filter(Boolean)
+  };
+}
+
+/* 스토리지 세트 수: 기본 노드는 구성 방식의 스토리지 모드(노드당 또는 클러스터당 1세트), DR Standby 는 노드당 1세트 */
+function storageSets(inp, nodes) {
+  const topo = getTopology(inp.topology);
+  const cluster = topo && topo.storageMode === 'cluster';
+  const baseSets = cluster ? (nodes.base > 0 ? 1 : 0) : nodes.base;
+  const extraRo = pricingConfig.meta.includeReadOnlyInTotalNodes ? nodes.readOnly : 0;
+  const count = baseSets + nodes.standby + extraRo;
+  const parts = [cluster ? `${topo.name} 클러스터 공유 ${baseSets}` : `기본 노드 ${baseSets}`];
+  if (nodes.standby) parts.push(`Standby 노드 ${nodes.standby}`);
+  if (extraRo) parts.push(`Read Only 추가 ${extraRo}`);
+  return { count, baseSets, cluster, text: parts.join(' + ') };
+}
+
+function calculate(inp) {
+  const cfg = pricingConfig, meta = cfg.meta, H = Number(meta.hoursPerMonth) || 730, date = pricingDate();
+  const errors = [], warnings = [], lines = [], rules = [];
+  const validation = validateInputs(inp);
+  const inputErrs = Object.values(validation.errors);
+  const nodes = effectiveNodeCounts(inp);
+  const cspName = getCsp(inp.csp)?.name || inp.csp;
+  const topo = validation.constraints.topo, lt = getLicenseType(inp.licenseType), db = getDbType(inp.dbType);
+
+  rules.push({ title: '총 노드 수', formula: `${nodes.base} (기본) + ${nodes.standby} (Standby)${meta.includeReadOnlyInTotalNodes ? ` + ${nodes.readOnly} (Read Only)` : ''} = ${nodes.total}`, note: meta.includeReadOnlyInTotalNodes ? 'Read Only 노드를 Standby 외 추가 노드로 계산 (기본 설정)' : `Read Only 노드 ${nodes.readOnly} 개는 Standby 노드 ${nodes.standby} 개 중 읽기 전용으로 개방하는 노드이므로 별도로 더하지 않습니다.` });
+  if (topo) rules.push({ title: `구성 방식 규칙 (${topo.id})`, note: `기본 노드 ${topo.minBaseNodes}~${topo.maxBaseNodes}, 허용 에디션 ${topo.allowedEditions}, Redo 구성 계수 ${topo.redoTopologyFactor}, 기본 노드 스토리지 ${topo.storageMode === 'cluster' ? '클러스터당 1세트(공유)' : '노드당 1세트'}` });
+  { const s = storageSets(inp, nodes); rules.push({ title: '스토리지 세트 수', formula: `${s.text} = ${s.count} 세트`, note: '데이터, Redo Log, Archive Log 볼륨은 세트 수만큼 곱합니다. 루트 볼륨은 총 노드 수 기준입니다.' }); }
+  if (db) rules.push({ title: `DB 유형 규칙 (${db.id})`, note: `허용 구성 방식: ${dbAllowedTopologies(db.id)?.join(', ') || '전체'}. Redo 볼륨 ${db.usesRedoVolume === false ? '미사용' : '사용'}, Archive 볼륨 ${db.usesArchiveVolume === false ? '미사용' : '사용'}` });
+  rules.push({ title: `CSP 규칙 (${cspName})`, note: `제공 DB 유형: ${cspAllowedDbTypes(inp.csp)?.join(', ') || '전체'}. 허용 라이선스 유형: ${(cspAllowedLicenseTypes(inp.csp) || []).map(id => getLicenseType(id)?.name || id).join(', ') || '전체'}` });
+  if (validation.constraints.dr.rule) { const r = validation.constraints.dr.rule; rules.push({ title: `DR 규칙 (${r.id})`, note: `DR ${r.drAllowed === false ? '불허' : (r.drRequired ? '필수' : '선택')}, Standby ${r.standbyMin}~${r.standbyMax}, Read Only 최대 ${r.readOnlyMax}${r.readOnlyLimitedByStandby !== false ? ' 및 Standby 이하' : ''}${r.memo ? '. ' + r.memo : ''}` }); }
+
+  // 인스턴스
+  const inst = getInstance(inp.instance, inp.csp);
+  if (inst && isEffective(inst, date)) {
+    const p = Number(inst.pricePerHour);
+    lines.push({ key: 'instance', label: '인스턴스', basis: `${cspName} ${inst.name} (${inst.vcpu} vCPU, ${inst.memoryGb} GB)`, qty: `${nodes.total} 노드`, unitPrice: `${p}/노드·시간`, formula: `${p} × ${nodes.total} 노드`, rawHourly: p * nodes.total, notes: [inst.memo].filter(Boolean) });
+  } else if (!validation.errors.instance) errors.push('인스턴스 가격을 찾을 수 없습니다.');
+
+  // 루트 볼륨
+  const roots = cfg.rootVolumeRules.filter(r => r.csp === inp.csp && isEffective(r, date));
+  if (!roots.length) errors.push(`루트 볼륨: ${cspName} 의 루트 볼륨 단가가 등록되어 있지 않습니다.`);
+  else if (roots.length > 1) errors.push(`루트 볼륨: ${cspName} 에 기준일에 유효한 루트 볼륨 규칙이 ${roots.length}개(${roots.map(r => r.id).join(', ')}) 있어 어느 것을 적용할지 정할 수 없습니다.`);
+  else {
+    const r = roots[0], size = Number(r.sizeGbPerNode), pm = Number(r.pricePerGbMonth);
+    lines.push({ key: 'root', label: '루트 볼륨', basis: `노드당 ${size} GB × ${nodes.total} 노드`, qty: `${size * nodes.total} GB`, unitPrice: `${pm}/GB·월`, formula: `${size} GB × ${nodes.total} 노드 × ${pm} ÷ ${H}h`, rawHourly: size * nodes.total * pm / H, notes: [r.memo].filter(Boolean) });
+  }
+
+  // 데이터, Redo, Archive 볼륨
+  for (const vd of VOLUME_DEFS) {
+    if (!volumeEnabled(vd, inp.dbType)) {
+      lines.push({ key: vd.key, label: vd.lineLabel, excluded: true, basis: db?.notice || `${inp.dbType} 은 ${vd.label} 을 사용하지 않습니다.`, qty: '제외', unitPrice: '', formula: '비용 계산 제외', rawHourly: 0, notes: [] });
+      continue;
+    }
+    const line = calcVolume(vd, inp, nodes, H, errors);
+    if (line) {
+      if (vd.key === 'redo' && inp.volumes.redo.auto) { const rs = computeRedoSize(inp); if (rs.rule && !rs.error) rules.push({ title: `Redo Log 용량 자동 산정 (${rs.rule.id})`, formula: `${rs.rule.formula}\n= ${fmtNum(rs.raw, 2)} GB → 최소 ${rs.rule.minGb} GB 보장 → ${rs.rule.multipleOf} GB 배수 올림 → ${fmtNum(rs.gb)} GB`, note: `변수: ${Object.entries(rs.vars).map(([k, v]) => `${k}=${v}`).join(', ')}` }); }
+      lines.push(line);
+    }
+  }
+
+  // 라이선스 및 미터링
+  if (lt && inst) {
+    const kinds = splitList(lt.chargedPriceKinds);
+    rules.push({ title: `라이선스 유형 규칙 (${lt.id})`, note: `${lt.description || ''} 부과 항목: ${kinds.map(k => cfg.priceKinds.find(p => p.id === k)?.name || k).join(', ') || '(없음)'}` });
+    const notCharged = cfg.priceKinds.filter(k => !kinds.includes(k.id));
+    // 노드 역할별 구성 라벨 결정 (Read Only 는 Standby 안에 포함)
+    const roCount = Math.min(nodes.readOnly, nodes.standby);
+    const roleGroups = [
+      { role: 'base', label: '기본 노드', count: nodes.base },
+      { role: 'standby', label: '복구용 Standby', count: nodes.standby - roCount },
+      { role: 'readonly', label: 'Read Only Standby', count: roCount }
+    ].filter(g => g.count > 0);
+    const labelNotes = [];
+    for (const g of roleGroups) {
+      const found = findNodeConfig(inp, g.role);
+      if (found.conflict.length) { errors.push(`노드 구성 라벨: ${g.label} 에 규칙 ${found.conflict.map(r => r.id).join(', ')} 이 같은 구체성으로 겹쳐 라벨을 정할 수 없습니다.`); continue; }
+      if (!found.item) { errors.push(`노드 구성 라벨: ${inp.dbType} / ${inp.topology} / ${inp.edition} / ${g.label} 에 적용할 구성 라벨 규칙이 없습니다.`); continue; }
+      g.config = String(found.item.config).trim(); g.ruleId = found.item.id;
+      labelNotes.push(`${g.label} ${g.count}개 → ${g.config} (규칙 ${g.ruleId})`);
+    }
+    if (labelNotes.length) rules.push({ title: '노드별 라이선스 구성 라벨', note: labelNotes.join(' / ') });
+    const byConfig = {};
+    for (const g of roleGroups) { if (!g.config) continue; const e = byConfig[g.config] = byConfig[g.config] || { count: 0, roles: [] }; e.count += g.count; e.roles.push(`${g.label} ${g.count}`); }
+    for (const kind of kinds) {
+      const kindName = cfg.priceKinds.find(p => p.id === kind)?.name || kind;
+      for (const [config, grp] of Object.entries(byConfig)) {
+        const picked = findLicensePrice(inp, kind, config, inst.vcpu);
+        if (picked.conflict.length) { errors.push(`${kindName}: ${inp.dbType} / ${config} / ${inst.vcpu} vCPU 에 같은 구체성의 가격 항목 ${picked.conflict.map(c => c.id).join(', ')} 이 겹쳐 적용할 가격을 정할 수 없습니다.`); continue; }
+        if (!picked.item) { errors.push(`${kindName}: ${inp.dbType} / ${lt.name} / ${config} / ${inst.vcpu} vCPU 조건에 등록된 가격이 없습니다. 가격표에 '-' 로 표시된 조합이거나 미등록 상태입니다. 다른 인스턴스(vCPU)를 선택하거나 관리자 설정에서 가격을 등록하세요.`); continue; }
+        const p = picked.item, price = Number(p.price);
+        let qty, qtyText, formula;
+        if (p.unit === 'vcpu-hour') { qty = inst.vcpu * grp.count; qtyText = `${inst.vcpu} vCPU × ${grp.count} 노드 = ${qty} vCPU`; formula = `${price} × ${inst.vcpu} vCPU × ${grp.count} 노드`; }
+        else if (p.unit === 'node-hour') { qty = grp.count; qtyText = `${grp.count} 노드`; formula = `${price} × ${grp.count} 노드`; }
+        else { qty = 1; qtyText = '1 (고정)'; formula = `${price} (시간당 고정)`; }
+        const unitLabel = LICENSE_UNITS.find(u => u.value === p.unit)?.label || p.unit;
+        lines.push({ key: 'lic-' + kind, label: `${kindName} (${config})`, basis: `${inp.dbType} / ${lt.name} / ${config} / ${inst.vcpu} vCPU → 가격 항목 '${p.id}'. 적용 노드: ${grp.roles.join(', ')}`, qty: qtyText, unitPrice: `${price}/${unitLabel}`, formula, rawHourly: price * qty, notes: [p.memo].filter(Boolean) });
+      }
+    }
+    for (const k of notCharged) lines.push({ key: 'lic-' + k.id, label: k.name, excluded: true, basis: `${lt.name} 규칙에 따라 부과하지 않음`, qty: '제외', unitPrice: '', formula: '비용 계산 제외', rawHourly: 0, notes: [] });
+  }
+
+  // 반올림과 합계. 표시되는 세부 금액의 합이 최종 금액이 되도록 각 항목을 먼저 반올림
+  for (const l of lines) { l.hourly = roundTo(l.rawHourly, meta.hourlyDecimals, meta.roundingMode); l.monthly = roundTo(l.rawHourly * H, meta.monthlyDecimals, meta.roundingMode); }
+  const totalHourly = roundTo(lines.reduce((s, l) => s + l.hourly, 0), meta.hourlyDecimals, meta.roundingMode);
+  const totalMonthly = roundTo(lines.reduce((s, l) => s + l.monthly, 0), meta.monthlyDecimals, meta.roundingMode);
+  rules.push({ title: '반올림과 월 환산', note: `시간당 금액은 소수 ${meta.hourlyDecimals}자리, 월 금액은 소수 ${meta.monthlyDecimals}자리로 ${roundingLabel(meta.roundingMode)}. 월 금액 = 항목별 시간당 원가 × ${H}시간. 합계는 표시된 항목 금액의 합입니다.` });
+
+  const ok = inputErrs.length === 0 && errors.length === 0;
+  return { ok, inputErrors: inputErrs, priceErrors: errors, warnings: Object.values(validation.warns), lines, rules, totalHourly, totalMonthly, nodes, H, validation };
+}
+
+/* ==========================================================================
+ * 7. 사용자 화면 렌더링
+ * ========================================================================== */
+function fillSelect(sel, options, current) {
+  sel.innerHTML = options.map(o => `<option value="${esc(o.value)}"${o.disabled ? ' disabled' : ''}>${esc(o.label)}</option>`).join('');
+  if (options.some(o => o.value === current)) sel.value = current;
+  return sel.value;
+}
+function setHint(fieldKey, msg, level) {
+  const wrap = $(`[data-field="${fieldKey}"]`);
+  if (!wrap) return;
+  const hint = $('.hint', wrap);
+  hint.textContent = msg || '';
+  hint.className = 'hint' + (level ? ' ' + level : '');
+  wrap.classList.toggle('invalid', level === 'error');
+}
+
+function buildVolumeBlocks() {
+  $('#volumes').innerHTML = VOLUME_DEFS.map(vd => `
+    <div class="volume" id="vol-${vd.key}">
+      <div class="subhead">${esc(vd.label)} <span class="tag" id="volTag-${vd.key}"></span></div>
+      <div class="banner" id="volBanner-${vd.key}" hidden></div>
+      <div class="grid">
+        <div class="field" data-field="${vd.key}_type"><label for="${vd.key}_type">스토리지 유형<span class="req">*</span></label><select id="${vd.key}_type" data-vol="${vd.key}" data-prop="type"></select><div class="hint"></div></div>
+        ${vd.supportsAuto ? `<div class="field" data-field="redoFileSizeMb"><label for="redoFileSizeMb">Redo Log File Size (MB)<span class="req">*</span></label><input id="redoFileSizeMb" type="number" min="1" step="1">
+          <div class="presets" data-presets="redoFileSizeMb">${PRESETS.redoFileSizeMb.map(v => `<button type="button" data-preset="redoFileSizeMb" data-value="${v}">${fmtNum(v)}</button>`).join('')}</div><div class="hint"></div></div>` : ''}
+        <div class="field" data-field="${vd.key}_sizeGb"><label for="${vd.key}_sizeGb">${vd.supportsAuto ? '용량 (GB, 자동 산정)' : '용량 (GB)<span class="req">*</span>'}</label><input id="${vd.key}_sizeGb" type="number" min="1" step="1" data-vol="${vd.key}" data-prop="sizeGb"${vd.supportsAuto ? ' readonly' : ''}>
+          ${vd.supportsAuto ? '' : `<div class="presets" data-presets="${vd.key}_sizeGb">${PRESETS.sizeGb.map(v => `<button type="button" data-preset="${vd.key}_sizeGb" data-value="${v}">${fmtNum(v)}</button>`).join('')}</div>`}<div class="hint"></div></div>
+        <div class="field" data-field="${vd.key}_iops"><label for="${vd.key}_iops">IOPS</label><input id="${vd.key}_iops" type="number" min="0" step="1" data-vol="${vd.key}" data-prop="iops">
+          <div class="presets" data-presets="${vd.key}_iops">${PRESETS.iops.map(v => `<button type="button" data-preset="${vd.key}_iops" data-value="${v}">${fmtNum(v)}</button>`).join('')}</div><div class="hint"></div></div>
+        <div class="field" data-field="${vd.key}_mbps"><label for="${vd.key}_mbps">처리량 (Mbps)</label><input id="${vd.key}_mbps" type="number" min="0" step="1" data-vol="${vd.key}" data-prop="mbps">
+          <div class="presets" data-presets="${vd.key}_mbps">${PRESETS.mbps.map(v => `<button type="button" data-preset="${vd.key}_mbps" data-value="${v}">${fmtNum(v)}</button>`).join('')}</div><div class="hint"></div></div>
+      </div>
+    </div>`).join('');
+}
+
+function renderHeader() {
+  const m = pricingConfig.meta;
+  $('#chipDate').innerHTML = `기준일 <b>${esc(pricingDate())}</b>`;
+  $('#chipUpdated').innerHTML = `마지막 수정 <b>${esc(fmtDateTime(m.updatedAt))}</b>`;
+  $('#chipCurrency').textContent = `${m.currencyCode || ''} ${m.currencySymbol}`.trim();
+  $('#totMonthlySub').textContent = `월 환산 ${fmtNum(m.hoursPerMonth)}시간 기준`;
+}
+
+/* 설정 기준으로 선택 목록을 다시 채우고 제약 조건을 반영 */
+/* 선택 버튼 그룹 렌더링 */
+function renderSeg(id, options, current) {
+  const el = $('#' + id);
+  el.innerHTML = options.map(o => `<button type="button" data-seg="${esc(id)}" data-value="${esc(o.value)}" class="${o.value === current ? 'on' : ''}" ${o.disabled ? 'disabled' : ''} title="${esc(o.title || '')}">${esc(o.label)}${o.sub ? `<span class="sub">${esc(o.sub)}</span>` : ''}</button>`).join('');
+}
+/* 스테퍼 입력의 값, 범위, 활성 상태를 한 번에 반영 */
+function setStepper(id, value, min, max, disabled) {
+  const el = $('#' + id);
+  el.value = value; el.min = min; el.max = max; el.disabled = disabled;
+  const v = toNum(value);
+  $$(`[data-stepper="${id}"]`).forEach(b => { const step = Number(b.dataset.step); b.disabled = disabled || v === null || (step < 0 && v <= min) || (step > 0 && v >= max); });
+}
+/* 인스턴스 선택기 (검색, 시리즈 필터, 목록) */
+let instFilter = { q: '', family: '*' };
+let instLastScrolled = null;
+function instFamilyOf(i) {
+  if (i.family) return i.family;
+  const m = String(i.name).match(/^Standard_([A-Za-z]+?)\d/);
+  if (m) return m[1];
+  return String(i.name).includes('.') ? i.name.split('.')[0] : i.name;
+}
+function renderInstancePicker(list, inp) {
+  const fams = [...new Set(list.map(instFamilyOf))].sort();
+  if (instFilter.family !== '*' && !fams.includes(instFilter.family)) instFilter.family = '*';
+  renderSeg('instFamily', [{ value: '*', label: '전체' }, ...fams.map(f => ({ value: f, label: f }))], instFilter.family);
+  const search = $('#instSearch'); if (search.value !== instFilter.q) search.value = instFilter.q;
+  const q = instFilter.q.trim().toLowerCase();
+  const rows = list.filter(i => (instFilter.family === '*' || instFamilyOf(i) === instFilter.family) && (!q || i.name.toLowerCase().includes(q) || String(i.vcpu) === q.replace(/\s*vcpu$/, '')))
+    .sort((a, b) => a.vcpu - b.vcpu || a.pricePerHour - b.pricePerHour || a.name.localeCompare(b.name));
+  const sym = pricingConfig.meta.currencySymbol;
+  const hiddenCount = rows.filter(i => !instanceHasPrice(i, inp)).length;
+  const shown = rows.filter(i => instanceHasPrice(i, inp));
+  $('#instList').innerHTML = `<div class="instrow head"><span>인스턴스명</span><span class="num">vCPU</span><span class="num">메모리</span><span class="num">노드당 시간</span></div>` +
+    (shown.length ? shown.map(i => `<button type="button" class="instrow ${i.id === inp.instance ? 'on' : ''}" data-inst="${esc(i.id)}" role="option" aria-selected="${i.id === inp.instance}"><span class="name">${esc(i.name)}<span class="mut">${esc(instFamilyOf(i))}</span></span><span class="num">${i.vcpu}</span><span class="num">${fmtNum(i.memoryGb)} GB</span><span class="num">${sym}${i.pricePerHour}</span></button>`).join('')
+      : `<div class="empty">${list.length ? '조건에 맞는 인스턴스가 없습니다. 검색어나 시리즈 필터, 구성을 확인하세요.' : '이 CSP 에 등록된 활성 인스턴스가 없습니다. 관리자 설정에서 등록하세요.'}</div>`);
+  const on = $('#instList .instrow.on');
+  if (on && instLastScrolled !== inp.instance) { $('#instList').scrollTop = Math.max(0, on.offsetTop - 80); instLastScrolled = inp.instance; }
+  setHint('instance', list.length ? `현재 구성에서 선택 가능한 인스턴스 ${shown.length}개 표시.${hiddenCount ? ` 라이선스 가격이 없는 ${hiddenCount}개(${[...new Set(rows.filter(i => !instanceHasPrice(i, inp)).map(i => i.vcpu))].sort((a, b) => a - b).join(', ')} vCPU)는 목록에서 제외했습니다.` : ''}` : '');
+}
+function rangeText(min, max, unit) {
+  if (isBlank(min) && isBlank(max)) return '입력 범위 제한 없음';
+  return `입력 범위 ${isBlank(min) ? '0' : fmtNum(min)}~${isBlank(max) ? '제한 없음' : fmtNum(max)} ${unit}`;
+}
+function markPresets(id, value) { $$(`[data-preset="${id}"]`).forEach(b => b.classList.toggle('on', toNum(b.dataset.value) === toNum(value))); }
+function renderNodeViz(inp, nodes) {
+  const boxes = [];
+  for (let i = 0; i < Math.min(nodes.base, 12); i++) boxes.push(`<div class="node active">Active<small>${esc(inp.topology)} ${i + 1}</small></div>`);
+  const roCount = Math.min(nodes.readOnly, nodes.standby);
+  for (let i = 0; i < Math.min(nodes.standby, 12); i++) {
+    const isRo = i >= nodes.standby - roCount;
+    boxes.push(`<div class="node standby ${isRo ? 'ro' : ''}">Standby<small>${isRo ? 'Read Only 개방' : 'DR 대기'}</small></div>`);
+  }
+  const extra = pricingConfig.meta.includeReadOnlyInTotalNodes ? ` + Read Only ${nodes.readOnly}` : '';
+  $('#nodeViz').innerHTML = boxes.join('') + `<span class="sum">총 ${nodes.total} 노드 (기본 ${nodes.base} + Standby ${nodes.standby}${extra})</span>`;
+}
+
+function renderForm() {
+  const inp = inputs;
+  const cspOpts = pricingConfig.csps.filter(c => c.active !== false).map(c => ({ value: c.id, label: c.name }));
+  if (!cspOpts.some(o => o.value === inp.csp) && cspOpts.length) inp.csp = cspOpts[0].value;
+  renderSeg('csp', cspOpts, inp.csp);
+  const allowedDb = cspAllowedDbTypes(inp.csp);
+  const dbOpts = pricingConfig.dbTypes.map(d => { const off = allowedDb && !allowedDb.includes(d.id); return { value: d.id, label: d.name, disabled: off, title: off ? `${getCsp(inp.csp)?.name || inp.csp} 에서는 제공하지 않습니다.` : '' }; });
+  if (!dbOpts.some(o => o.value === inp.dbType) && dbOpts.length) inp.dbType = (dbOpts.find(o => !o.disabled) || dbOpts[0]).value;
+  renderSeg('dbType', dbOpts, inp.dbType);
+  setHint('dbType', allowedDb ? `${getCsp(inp.csp)?.name || inp.csp} 제공 DB: ${allowedDb.join(', ')}` : '');
+  const allowedLt = cspAllowedLicenseTypes(inp.csp);
+  const ltOpts = pricingConfig.licenseTypes.filter(l => l.active !== false).map(l => { const off = allowedLt && !allowedLt.includes(l.id); return { value: l.id, label: l.name, disabled: off, title: off ? `${getCsp(inp.csp)?.name || inp.csp} 에서는 선택할 수 없습니다.` : (l.description || '') }; });
+  if (!ltOpts.some(o => o.value === inp.licenseType) && ltOpts.length) inp.licenseType = (ltOpts.find(o => !o.disabled) || ltOpts[0]).value;
+  renderSeg('licenseType', ltOpts, inp.licenseType);
+  const allowedTopos = dbAllowedTopologies(inp.dbType);
+  const topoOpts = pricingConfig.topologies.filter(t => t.active !== false).map(t => {
+    const off = allowedTopos && !allowedTopos.includes(t.id);
+    return { value: t.id, label: t.name, sub: t.minBaseNodes === t.maxBaseNodes ? `노드 ${t.minBaseNodes}` : `노드 ${t.minBaseNodes}~${t.maxBaseNodes}`, disabled: off, title: off ? `${inp.dbType} 은 ${t.name} 구성을 지원하지 않습니다.` : (t.description || '') };
+  });
+  if (!topoOpts.some(o => o.value === inp.topology) && topoOpts.length) inp.topology = (topoOpts.find(o => !o.disabled) || topoOpts[0]).value;
+  renderSeg('topology', topoOpts, inp.topology);
+  const c = deriveConstraints(inp);
+  const topo = c.topo;
+  const allowedEds = topo ? splitList(topo.allowedEditions) : null;
+  const edOpts = pricingConfig.editions.map(e => { const off = allowedEds && !allowedEds.includes(e.id); return { value: e.id, label: e.name, disabled: off, title: off ? `${topo.name} 구성은 ${allowedEds.join(', ')} 에디션만 허용합니다.` : '' }; });
+  if (!edOpts.some(o => o.value === inp.edition) && edOpts.length) inp.edition = edOpts[0].value;
+  renderSeg('edition', edOpts, inp.edition);
+
+  const instAll = effectiveInstances(inp.csp);
+  const selectable = instAll.filter(i => instanceHasPrice(i, inp));
+  if (!selectable.some(i => i.id === inp.instance)) inp.instance = selectable[0]?.id || instAll[0]?.id || '';
+  renderInstancePicker(instAll, inp);
+  const inst = getInstance(inp.instance, inp.csp);
+  $('#instInfo').innerHTML = inst ? `<span>선택: <b>${esc(inst.name)}</b></span><span>vCPU ${inst.vcpu}</span><span>메모리 ${fmtNum(inst.memoryGb)} GB</span><span>노드당 ${pricingConfig.meta.currencySymbol}${inst.pricePerHour}/시간</span>${inst.memo ? `<span>${esc(inst.memo)}</span>` : ''}` : '';
+  $('#redoFileSizeMb').value = inp.redoFileSizeMb;
+
+  if (topo) { setStepper('baseNodes', inp.baseNodes, topo.minBaseNodes, topo.maxBaseNodes, false); setHint('baseNodes', topo.minBaseNodes === topo.maxBaseNodes ? `${topo.name} 구성은 ${topo.minBaseNodes} 노드 고정` : `허용 범위 ${topo.minBaseNodes}~${topo.maxBaseNodes}`); }
+  else setStepper('baseNodes', inp.baseNodes, 1, 99, false);
+  if (topo) setHint('edition', `허용 에디션: ${(allowedEds || []).join(', ')}`);
+  setHint('topology', (allowedTopos ? `${inp.dbType} 허용 구성: ${allowedTopos.join(', ')}. ` : '') + (topo?.description || ''));
+  setHint('licenseType', (allowedLt ? `${getCsp(inp.csp)?.name || inp.csp} 허용: ${allowedLt.map(id => getLicenseType(id)?.name || id).join(', ')}. ` : '') + (getLicenseType(inp.licenseType)?.description || ''));
+
+  // DR 제약
+  const d = c.dr;
+  const drOpts = [{ value: 'no', label: '미사용' }, { value: 'yes', label: '사용', sub: 'Standby 노드 추가' }];
+  if (d.rule) {
+    if (!d.allowed) { drOpts[1].disabled = true; drOpts[1].title = 'DR 미지원 구성'; setHint('drEnabled', `${inp.dbType} ${inp.topology} 구성은 DR 을 지원하지 않습니다.`, 'info'); }
+    else if (d.required) { drOpts[0].disabled = true; drOpts[0].title = 'DR 필수 구성'; setHint('drEnabled', `${inp.dbType} ${inp.topology} 구성은 DR 사용이 필수입니다.`, 'info'); }
+    else setHint('drEnabled', '');
+    if (!inp.drEnabled) { setStepper('standbyNodes', inp.standbyNodes, 0, 0, true); setStepper('readOnlyNodes', inp.readOnlyNodes, 0, 0, true); setHint('standbyNodes', 'DR 미사용'); setHint('readOnlyNodes', 'DR 미사용'); }
+    else {
+      const roMax = Math.min(d.readOnlyMax, d.roByStandby ? (toNum(inp.standbyNodes) ?? 0) : Infinity);
+      setStepper('standbyNodes', inp.standbyNodes, d.standbyMin, d.standbyMax, d.standbyMin === d.standbyMax);
+      setStepper('readOnlyNodes', inp.readOnlyNodes, 0, roMax, false);
+      setHint('standbyNodes', d.standbyMin === d.standbyMax ? `규칙에 따라 ${d.standbyMin} 고정` : `허용 범위 ${d.standbyMin}~${d.standbyMax}`);
+      setHint('readOnlyNodes', `Standby ${toNum(inp.standbyNodes) ?? 0} 개 중 읽기 전용으로 개방할 노드 수 (최대 ${roMax})`);
+    }
+    $('#drRuleHint').textContent = `적용 DR 규칙: ${d.rule.id}${d.rule.memo ? '. ' + d.rule.memo : ''}`;
+  } else { renderSeg('drEnabled', drOpts, inp.drEnabled ? 'yes' : 'no'); setStepper('standbyNodes', inp.standbyNodes, 0, 99, !inp.drEnabled); setStepper('readOnlyNodes', inp.readOnlyNodes, 0, 99, !inp.drEnabled); $('#drRuleHint').textContent = ''; }
+  renderSeg('drEnabled', drOpts, inp.drEnabled ? 'yes' : 'no');
+  renderNodeViz(inp, effectiveNodeCounts(inp));
+
+  // 볼륨
+  const stOpts = effectiveStorageTypes(inp.csp).map(s => ({ value: s.code, label: `${s.code} (${s.name}, ${pricingConfig.meta.currencySymbol}${s.pricePerGbMonth}/GB·월)` }));
+  const redoSize = computeRedoSize(inp);
+  for (const vd of VOLUME_DEFS) {
+    const v = inp.volumes[vd.key];
+    const enabled = volumeEnabled(vd, inp.dbType);
+    const block = $(`#vol-${vd.key}`);
+    block.classList.toggle('disabled', !enabled);
+    const tag = $(`#volTag-${vd.key}`);
+    tag.textContent = enabled ? '' : '비용 계산 제외';
+    tag.className = 'tag' + (enabled ? '' : ' off');
+    tag.hidden = enabled;
+    const banner = $(`#volBanner-${vd.key}`);
+    banner.hidden = enabled;
+    if (!enabled) banner.textContent = getDbType(inp.dbType)?.notice || `${inp.dbType} 은 ${vd.label} 을 사용하지 않아 입력이 비활성화되고 비용에서 제외됩니다.`;
+    const typeSel = $(`#${vd.key}_type`);
+    v.type = fillSelect(typeSel, stOpts.length ? stOpts : [{ value: '', label: '등록된 스토리지 유형 없음', disabled: true }], v.type);
+    const st = effectiveStorageTypes(inp.csp).find(s => s.code === v.type);
+    const range = { sizeGb: st ? [st.minGb, st.maxGb] : [1, null], iops: st ? [st.minIops, st.maxIops] : [0, null], mbps: st ? [st.minMbps, st.maxMbps] : [0, null] };
+    const sizeRange = st ? rangeText(st.minGb, st.maxGb, 'GB') : '';
+    for (const prop of ['sizeGb', 'iops', 'mbps']) { const el = $(`#${vd.key}_${prop}`); el.min = isBlank(range[prop][0]) ? 0 : range[prop][0]; if (isBlank(range[prop][1])) el.removeAttribute('max'); else el.max = range[prop][1]; }
+    if (!vd.supportsAuto) setHint(`${vd.key}_sizeGb`, enabled ? sizeRange : '');
+    $(`#${vd.key}_sizeGb`).value = v.sizeGb; $(`#${vd.key}_iops`).value = v.iops; $(`#${vd.key}_mbps`).value = v.mbps;
+    for (const el of $$(`[data-vol="${vd.key}"]`)) el.disabled = !enabled;
+    if (vd.supportsAuto) {
+      v.auto = true;
+      const sizeEl = $(`#${vd.key}_sizeGb`);
+      sizeEl.readOnly = true;
+      if (enabled) {
+        if (redoSize && !redoSize.error) { v.sizeGb = redoSize.gb; sizeEl.value = redoSize.gb; setHint(`${vd.key}_sizeGb`, `Redo Log File Size ${fmtNum(inp.redoFileSizeMb)} MB 기준 자동 산정: ${fmtNum(redoSize.gb)} GB (규칙 ${redoSize.rule.id}, 최소 ${redoSize.rule.minGb} GB)`, 'info'); }
+        else setHint(`${vd.key}_sizeGb`, redoSize?.error || '자동 산정 불가', 'error');
+      } else setHint(`${vd.key}_sizeGb`, '');
+    }
+    markPresets(`${vd.key}_sizeGb`, v.sizeGb); markPresets(`${vd.key}_iops`, v.iops); markPresets(`${vd.key}_mbps`, v.mbps);
+    $$(`[data-preset^="${vd.key}_"]`).forEach(b => {
+      const prop = b.dataset.preset.slice(vd.key.length + 1), val = toNum(b.dataset.value), [mn, mx] = range[prop] || [null, null];
+      const outOfRange = (!isBlank(mn) && val < Number(mn)) || (!isBlank(mx) && val > Number(mx));
+      b.disabled = !enabled || outOfRange || (prop === 'sizeGb' && vd.supportsAuto && !!v.auto);
+      b.title = outOfRange ? '이 스토리지 유형의 입력 범위를 벗어납니다' : '';
+    });
+    if (st && enabled) {
+      setHint(`${vd.key}_iops`, `${st.iopsBillable === false ? 'IOPS 별도 과금 없음' : 'IOPS 구간 단가 누진 적용'}. ${rangeText(st.minIops, st.maxIops, 'IOPS')}`);
+      setHint(`${vd.key}_mbps`, `${st.mbpsBillable === false ? '처리량 별도 과금 없음' : 'Mbps 구간 단가 누진 적용'}. ${rangeText(st.minMbps, st.maxMbps, 'Mbps')}`);
+    } else { setHint(`${vd.key}_iops`, ''); setHint(`${vd.key}_mbps`, ''); }
+  }
+  const redoOn = volumeEnabled(VOLUME_DEFS[1], inp.dbType);
+  $('#redoFileSizeMb').disabled = !redoOn;
+  markPresets('redoFileSizeMb', inp.redoFileSizeMb);
+  $$('[data-preset="redoFileSizeMb"]').forEach(b => { b.disabled = !redoOn; });
+  setHint('redoFileSizeMb', redoOn ? 'Redo 볼륨 용량 자동 산정의 기준값. 입력 범위 1 MB 이상' : '');
+}
+
+function renderValidation(validation) {
+  const all = Object.keys(validation.errors).concat(Object.keys(validation.warns));
+  for (const key of all) {
+    if (validation.errors[key]) setHint(key, validation.errors[key], 'error');
+    else if (validation.warns[key]) setHint(key, validation.warns[key], 'warn');
+  }
+}
+
+function renderResult(res) {
+  const cfg = pricingConfig, m = cfg.meta;
+  const hourlyEl = $('#totHourly'), monthlyEl = $('#totMonthly');
+  if (res.ok) {
+    hourlyEl.textContent = fmtMoney(res.totalHourly, m.hourlyDecimals, cfg); hourlyEl.className = 'val';
+    monthlyEl.textContent = fmtMoney(res.totalMonthly, m.monthlyDecimals, cfg); monthlyEl.className = 'val';
+  } else {
+    hourlyEl.textContent = '계산 불가'; hourlyEl.className = 'val na';
+    monthlyEl.textContent = '계산 불가'; monthlyEl.className = 'val na';
+  }
+  let alerts = '';
+  if (res.inputErrors.length) alerts += `<div class="alert error"><b>입력값을 확인하세요.</b><ul>${res.inputErrors.map(e => `<li>${esc(e)}</li>`).join('')}</ul></div>`;
+  if (res.priceErrors.length) alerts += `<div class="alert error"><b>가격 또는 규칙이 없어 계산할 수 없습니다.</b> 관리자 설정에서 아래 항목을 등록하세요.<ul>${res.priceErrors.map(e => `<li>${esc(e)}</li>`).join('')}</ul></div>`;
+  if (res.warnings.length) alerts += `<div class="alert warn"><ul>${res.warnings.map(e => `<li>${esc(e)}</li>`).join('')}</ul></div>`;
+  $('#calcAlerts').innerHTML = alerts;
+
+  // 구성 요약과 비용 구성 비율
+  const inst = getInstance(inputs.instance, inputs.csp);
+  const drText = inputs.drEnabled ? `DR Standby ${res.nodes.standby}${res.nodes.readOnly ? ` (Read Only ${res.nodes.readOnly})` : ''}` : 'DR 미사용';
+  $('#cfgSummary').innerHTML = [
+    `<b>${esc(getCsp(inputs.csp)?.name || inputs.csp)}</b>`, `${esc(inputs.dbType)} ${esc(inputs.edition)}`, esc(getLicenseType(inputs.licenseType)?.name || inputs.licenseType),
+    `${esc(inputs.topology)} 기본 ${res.nodes.base} 노드`, esc(drText), inst ? esc(inst.name) : '인스턴스 미선택', `총 <b>${res.nodes.total}</b> 노드`
+  ].map(t => `<span>${t}</span>`).join('');
+  const comp = res.lines.filter(l => !l.excluded && l.hourly > 0);
+  const compTotal = comp.reduce((s, l) => s + l.hourly, 0);
+  $('#compWrap').hidden = !(res.ok && compTotal > 0);
+  if (res.ok && compTotal > 0) {
+    $('#compBar').innerHTML = comp.map(l => `<span style="width:${(l.hourly / compTotal * 100).toFixed(2)}%;background:${LINE_COLORS[l.key] || '#94a3b8'}" title="${esc(l.label)} ${(l.hourly / compTotal * 100).toFixed(1)}%"></span>`).join('');
+    $('#compLegend').innerHTML = comp.map(l => `<span><i style="background:${LINE_COLORS[l.key] || '#94a3b8'}"></i>${esc(l.label)} ${(l.hourly / compTotal * 100).toFixed(1)}%</span>`).join('');
+  }
+
+  // 상세 내역 표
+  const rows = res.lines.map(l => `
+    <tr class="${l.excluded ? 'excluded' : ''}">
+      <td><b>${esc(l.label)}</b><span class="basis">${esc(l.basis)}</span></td>
+      <td>${esc(l.qty)}</td>
+      <td>${esc(l.unitPrice)}</td>
+      <td class="num">${l.excluded ? '0' : esc(fmtMoney(l.hourly, m.hourlyDecimals, cfg))}</td>
+      <td class="num">${l.excluded ? '0' : esc(fmtMoney(l.monthly, m.monthlyDecimals, cfg))}</td>
+    </tr>`).join('');
+  $('#breakdownTable').innerHTML = `
+    <thead><tr><th>항목 / 적용 기준</th><th>수량</th><th>단가</th><th class="num">시간당</th><th class="num">월 (${fmtNum(res.H)}h)</th></tr></thead>
+    <tbody>${rows || `<tr><td colspan="5" class="empty">표시할 항목이 없습니다.</td></tr>`}
+    <tr class="total"><td>합계${res.ok ? '' : ' (계산 불가 항목 제외, 참고용)'}</td><td></td><td></td><td class="num">${esc(fmtMoney(res.totalHourly, m.hourlyDecimals, cfg))}</td><td class="num">${esc(fmtMoney(res.totalMonthly, m.monthlyDecimals, cfg))}</td></tr></tbody>`;
+  $('#breakdownCnt').textContent = `${res.lines.filter(l => !l.excluded).length}개 항목`;
+
+  // 계산 근거
+  const basis = res.lines.map(l => `
+    <li><div class="t">${esc(l.label)}${l.excluded ? ' <span class="tag off">제외</span>' : ''}</div>
+      <div class="n">적용 기준: ${esc(l.basis)}</div>
+      <div class="f">${esc(l.formula)}${l.excluded ? '' : `\n= ${esc(fmtNum(l.rawHourly, 8))} /시간 → ${esc(fmtMoney(l.hourly, m.hourlyDecimals, cfg))} /시간, ${esc(fmtMoney(l.monthly, m.monthlyDecimals, cfg))} /월`}</div>
+      ${l.parts ? `<div class="n">${l.parts.map(p => `${esc(p.label)}: ${esc(fmtNum(p.hour, 8))} /시간(1 세트)`).join(' , ')}</div>` : ''}
+      ${l.notes && l.notes.length ? `<div class="n">메모: ${esc(l.notes.join(' / '))}</div>` : ''}
+    </li>`).join('');
+  const rules = res.rules.map(r => `<li><div class="t">${esc(r.title)}</div>${r.formula ? `<div class="f">${esc(r.formula)}</div>` : ''}${r.note ? `<div class="n">${esc(r.note)}</div>` : ''}</li>`).join('');
+  $('#basisContent').innerHTML = `
+    <dl class="kv" style="margin-bottom:12px">
+      <dt>가격 기준일</dt><dd>${esc(pricingDate())}</dd>
+      <dt>설정 이름</dt><dd>${esc(m.configName || '')}</dd>
+      <dt>총 노드 수</dt><dd>${res.nodes.total} (기본 ${res.nodes.base}, Standby ${res.nodes.standby}, Read Only ${res.nodes.readOnly})</dd>
+      <dt>월 환산 시간</dt><dd>${fmtNum(res.H)} 시간</dd>
+    </dl>
+    <h4 style="font-size:13px;margin:8px 0">항목별 계산식</h4><ul class="basis-list">${basis}</ul>
+    <h4 style="font-size:13px;margin:8px 0">적용 규칙</h4><ul class="basis-list">${rules}</ul>`;
+  $('#resultFoot').textContent = `가격 기준일 ${pricingDate()}, 설정 마지막 수정 ${fmtDateTime(m.updatedAt)}. 모든 금액은 ${m.currencyCode || ''} ${m.currencySymbol} 기준이며 세금은 포함되지 않았습니다.`;
+}
+
+function recalcAndRender() {
+  renderHeader();
+  renderForm();
+  const res = calculate(inputs);
+  renderValidation(res.validation);
+  renderResult(res);
+  saveInputs();
+}
+
+/* 입력 이벤트 */
+/* CSP 와 구성 방식에 맞지 않는 스토리지 유형을 허용 목록의 첫 항목으로 바꿈 */
+function applyStorageDefaults(inp) {
+  const sts = effectiveStorageTypes(inp.csp);
+  const allowed = topologyAllowedStorage(inp.topology);
+  const ok = s => sts.some(x => x.code === s) && (!allowed || allowed.includes(s));
+  const fallback = (sts.find(s => !allowed || allowed.includes(s.code)) || sts[0])?.code || '';
+  for (const vd of VOLUME_DEFS) { const v = inp.volumes[vd.key]; if (!ok(v.type)) v.type = fallback; }
+}
+
+/* 선택 버튼(세그먼트) 값 변경 처리. 규칙이 바뀌는 필드는 기본값을 다시 적용 */
+function onFieldChange(field, value) {
+  const onRuleChange = () => { applyRuleDefaults(inputs, true); recalcAndRender(); };
+  switch (field) {
+    case 'csp': {
+      inputs.csp = value;
+      const allowedLt = cspAllowedLicenseTypes(inputs.csp); if (allowedLt && !allowedLt.includes(inputs.licenseType)) inputs.licenseType = allowedLt.find(id => getLicenseType(id)) || inputs.licenseType;
+      const allowedDb = cspAllowedDbTypes(inputs.csp);
+      if (allowedDb && !allowedDb.includes(inputs.dbType)) {
+        inputs.dbType = allowedDb.find(id => getDbType(id)) || inputs.dbType;
+        const allowedTopo = dbAllowedTopologies(inputs.dbType);
+        if (allowedTopo && !allowedTopo.includes(inputs.topology)) inputs.topology = allowedTopo.find(id => getTopology(id)) || inputs.topology;
+        const t = getTopology(inputs.topology);
+        if (t) { const eds = splitList(t.allowedEditions); if (!eds.includes(inputs.edition) && eds.length) inputs.edition = eds[0]; }
+      }
+      const list = effectiveInstances(inputs.csp); if (!list.some(i => i.id === inputs.instance)) inputs.instance = (list.find(i => instanceHasPrice(i, inputs)) || list[0])?.id || '';
+      applyStorageDefaults(inputs);
+      onRuleChange(); break;
+    }
+    case 'dbType': {
+      inputs.dbType = value;
+      const allowed = dbAllowedTopologies(inputs.dbType);
+      if (allowed && !allowed.includes(inputs.topology)) inputs.topology = allowed.find(id => getTopology(id)) || inputs.topology;
+      const t = getTopology(inputs.topology);
+      if (t) { const eds = splitList(t.allowedEditions); if (!eds.includes(inputs.edition) && eds.length) inputs.edition = eds[0]; }
+      applyStorageDefaults(inputs);
+      onRuleChange(); break;
+    }
+    case 'licenseType': inputs.licenseType = value; recalcAndRender(); break;
+    case 'topology': {
+      inputs.topology = value;
+      const t = getTopology(inputs.topology);
+      if (t) { const allowed = splitList(t.allowedEditions); if (!allowed.includes(inputs.edition) && allowed.length) inputs.edition = allowed[0]; }
+      applyStorageDefaults(inputs);
+      onRuleChange(); break;
+    }
+    case 'edition': inputs.edition = value; recalcAndRender(); break;
+    case 'drEnabled': inputs.drEnabled = value === 'yes'; onRuleChange(); break;
+    case 'instFamily': instFilter.family = value; renderInstancePicker(effectiveInstances(inputs.csp), inputs); break;
+  }
+}
+
+function bindFormEvents() {
+  $('.forms').addEventListener('click', e => {
+    const seg = e.target.closest('button[data-seg]');
+    if (seg && !seg.disabled) { onFieldChange(seg.dataset.seg, seg.dataset.value); return; }
+    const st = e.target.closest('button[data-stepper]');
+    if (st && !st.disabled) {
+      const el = $('#' + st.dataset.stepper);
+      let v = (toNum(el.value) ?? 0) + Number(st.dataset.step);
+      if (el.min !== '' && v < Number(el.min)) v = Number(el.min);
+      if (el.max !== '' && v > Number(el.max)) v = Number(el.max);
+      el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); return;
+    }
+    const pr = e.target.closest('button[data-preset]');
+    if (pr && !pr.disabled) { const el = $('#' + pr.dataset.preset); el.value = pr.dataset.value; el.dispatchEvent(new Event('input', { bubbles: true })); return; }
+    const ir = e.target.closest('button[data-inst]');
+    if (ir) { inputs.instance = ir.dataset.inst; recalcAndRender(); }
+  });
+  $('#instSearch').addEventListener('input', e => { instFilter.q = e.target.value; renderInstancePicker(effectiveInstances(inputs.csp), inputs); });
+  $('#btnResetInputs').addEventListener('click', () => {
+    inputs = deepClone(DEFAULT_INPUTS);
+    const list = effectiveInstances(inputs.csp); if (!list.some(i => i.id === inputs.instance)) inputs.instance = list[0]?.id || '';
+    applyRuleDefaults(inputs, true); recalcAndRender();
+  });
+  $('#baseNodes').addEventListener('input', e => { inputs.baseNodes = toNum(e.target.value) ?? ''; recalcAndRender(); });
+  $('#standbyNodes').addEventListener('input', e => { inputs.standbyNodes = toNum(e.target.value) ?? ''; recalcAndRender(); });
+  $('#readOnlyNodes').addEventListener('input', e => { inputs.readOnlyNodes = toNum(e.target.value) ?? ''; recalcAndRender(); });
+  $('#redoFileSizeMb').addEventListener('input', e => { inputs.redoFileSizeMb = toNum(e.target.value) ?? ''; recalcAndRender(); });
+  $('#volumes').addEventListener('input', e => {
+    const el = e.target; const vol = el.dataset.vol, prop = el.dataset.prop; if (!vol || !prop) return;
+    const v = inputs.volumes[vol];
+    if (prop === 'auto') v.auto = el.checked;
+    else if (prop === 'type') v.type = el.value;
+    else v[prop] = toNum(el.value) ?? '';
+    recalcAndRender();
+  });
+}
+
+/* ==========================================================================
+ * 8. 관리자 설정 화면
+ * ========================================================================== */
+let adminSection = 'instances';
+const ADMIN_EXTRA = [{ key: '__meta', group: '설정', title: '기본 설정' }, { key: '__json', group: '설정', title: 'JSON 관리' }];
+
+function openAdmin() { $('#adminModal').hidden = false; renderAdmin(); document.body.style.overflow = 'hidden'; }
+function closeAdmin() { $('#adminModal').hidden = true; document.body.style.overflow = ''; recalcAndRender(); }
+function adminTouched() { saveConfig(true); recalcAndRender(); $('#adminUpdated').textContent = `마지막 수정 ${fmtDateTime(pricingConfig.meta.updatedAt)}`; $('#adminStatus').textContent = '저장됨'; }
+
+function renderAdmin() {
+  const conflicts = detectConflicts(pricingConfig);
+  $('#adminUpdated').textContent = `마지막 수정 ${fmtDateTime(pricingConfig.meta.updatedAt)}`;
+  const nav = $('#adminNav');
+  const groups = {};
+  [...TABLE_SECTIONS, ...ADMIN_EXTRA].forEach(s => (groups[s.group] = groups[s.group] || []).push(s));
+  nav.innerHTML = Object.entries(groups).map(([g, list]) => `<div class="grp">${esc(g)}</div>` + list.map(s => {
+    const n = conflicts.filter(c => c.section === s.key).length;
+    return `<button type="button" data-sec="${esc(s.key)}" class="${s.key === adminSection ? 'active' : ''}">${esc(s.title)}${n ? `<span class="badge" title="경고 ${n}건">${n}</span>` : ''}</button>`;
+  }).join('')).join('');
+  $$('button', nav).forEach(b => b.addEventListener('click', () => { adminSection = b.dataset.sec; renderAdmin(); }));
+
+  const content = $('#adminContent');
+  if (adminSection === '__meta') return renderMetaEditor(content);
+  if (adminSection === '__json') return renderJsonPanel(content);
+  const sec = TABLE_SECTIONS.find(s => s.key === adminSection);
+  renderTableEditor(content, sec, conflicts.filter(c => c.section === sec.key));
+}
+
+function renderConflicts(list) {
+  if (!list.length) return '';
+  return `<div class="alert warn conflicts"><b>경고 ${list.length}건: 중복 또는 충돌하는 항목이 있습니다.</b><ul>${list.map(c => `<li>${esc(c.message)}</li>`).join('')}</ul></div>`;
+}
+
+function cellInput(col, row, sec, idx) {
+  const v = row[col.key];
+  const name = `data-sec="${esc(sec.key)}" data-idx="${idx}" data-key="${esc(col.key)}"`;
+  switch (col.type) {
+    case 'checkbox': return `<input type="checkbox" ${name} ${v !== false && v !== undefined && v !== null ? 'checked' : ''}>`;
+    case 'select': {
+      let opts = [];
+      try { opts = col.options(pricingConfig, row) || []; } catch (e) { opts = []; }
+      const has = opts.some(o => o.value === v);
+      return `<select ${name}>${has || isBlank(v) ? '' : `<option value="${esc(v)}" selected>${esc(v)} (목록에 없음)</option>`}${isBlank(v) ? '<option value="">선택</option>' : ''}${opts.map(o => `<option value="${esc(o.value)}" ${o.value === v ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select>`;
+    }
+    case 'number': case 'int': return `<input type="number" ${name} value="${isBlank(v) ? '' : esc(v)}" step="${col.step || (col.type === 'int' ? 1 : 'any')}" ${col.min !== undefined ? `min="${col.min}"` : ''}>`;
+    case 'date': return `<input type="date" ${name} value="${esc(v || '')}">`;
+    default: return `<input type="text" ${name} value="${esc(v ?? '')}">`;
+  }
+}
+
+function renderTableEditor(content, sec, conflicts) {
+  const rows = pricingConfig[sec.key] || [];
+  const dupIds = new Set(rows.map(r => r.id).filter((id, i, a) => a.indexOf(id) !== i));
+  content.innerHTML = `
+    <h3>${esc(sec.title)}</h3>
+    <p class="admin-desc">${esc(sec.desc)}</p>
+    ${renderConflicts(conflicts)}
+    <div class="admin-toolbar">
+      <button type="button" class="btn primary sm" id="btnAddRow">행 추가</button>
+      <span style="font-size:12px;color:var(--muted)">${rows.length}개 항목. 셀을 수정하면 즉시 반영됩니다.</span>
+    </div>
+    <div class="admin-table-wrap"><table class="admin">
+      <thead><tr><th>#</th>${sec.columns.map(c => `<th>${esc(c.label)}${c.required ? ' *' : ''}</th>`).join('')}<th></th></tr></thead>
+      <tbody>${rows.length ? rows.map((row, i) => `<tr class="${dupIds.has(row.id) ? 'dup' : ''}"><td>${i + 1}</td>${sec.columns.map(c => `<td class="${c.type === 'checkbox' ? 'center' : (c.wide ? 'w-wide' : (c.type === 'text' ? 'w-text' : ''))}">${cellInput(c, row, sec, i)}</td>`).join('')}<td><button type="button" class="btn danger sm" data-del="${i}">삭제</button></td></tr>`).join('') : `<tr><td colspan="${sec.columns.length + 2}" class="empty">항목이 없습니다. "행 추가" 를 눌러 등록하세요.</td></tr>`}</tbody>
+    </table></div>`;
+  $('#btnAddRow', content).addEventListener('click', () => { pricingConfig[sec.key].push(sec.newRow(pricingConfig)); adminTouched(); renderAdmin(); });
+  $$('[data-del]', content).forEach(b => b.addEventListener('click', () => {
+    const i = Number(b.dataset.del); const row = pricingConfig[sec.key][i];
+    if (!confirm(`'${row.id || (i + 1) + '번째 행'}' 항목을 삭제할까요?`)) return;
+    pricingConfig[sec.key].splice(i, 1); adminTouched(); renderAdmin();
+  }));
+  const apply = (el, rerender) => {
+    const { idx, key } = el.dataset; const col = sec.columns.find(c => c.key === key); const row = pricingConfig[sec.key][Number(idx)];
+    if (!row || !col) return;
+    if (col.type === 'checkbox') row[key] = el.checked;
+    else if (col.type === 'number' || col.type === 'int') row[key] = toNum(el.value);
+    else row[key] = el.value;
+    adminTouched();
+    if (rerender) renderAdmin();
+  };
+  content.addEventListener('input', e => { const el = e.target; if (el.dataset.key && el.tagName === 'INPUT' && el.type !== 'checkbox' && el.type !== 'date') apply(el, false); });
+  content.addEventListener('change', e => { const el = e.target; if (!el.dataset.key) return; if (el.tagName === 'SELECT' || el.type === 'checkbox' || el.type === 'date') apply(el, true); else apply(el, false); });
+  content.addEventListener('blur', e => { const el = e.target; if (el.dataset && el.dataset.key && el.tagName === 'INPUT' && el.type !== 'checkbox') renderAdmin(); }, true);
+}
+
+function renderMetaEditor(content) {
+  const m = pricingConfig.meta;
+  content.innerHTML = `
+    <h3>기본 설정</h3>
+    <p class="admin-desc">월 환산 시간, 통화, 반올림, 노드 산정 방식과 기준일을 관리합니다. 루트 볼륨 기본값은 "루트 볼륨" 메뉴에서 CSP별로 관리합니다.</p>
+    <div class="meta-form">${META_FIELDS.map(f => {
+      const v = m[f.key]; let input;
+      if (f.type === 'checkbox') input = `<label class="checkline" style="min-height:36px"><input type="checkbox" data-meta="${f.key}" ${v ? 'checked' : ''}> ${v ? '사용' : '미사용'}</label>`;
+      else if (f.type === 'select') input = `<select data-meta="${f.key}">${f.options().map(o => `<option value="${o.value}" ${o.value === v ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select>`;
+      else if (f.type === 'number' || f.type === 'int') input = `<input type="number" data-meta="${f.key}" value="${isBlank(v) ? '' : esc(v)}" step="${f.type === 'int' ? 1 : 'any'}" ${f.min !== undefined ? `min="${f.min}"` : ''} ${f.max !== undefined ? `max="${f.max}"` : ''}>`;
+      else if (f.type === 'date') input = `<input type="date" data-meta="${f.key}" value="${esc(v || '')}">`;
+      else input = `<input type="text" data-meta="${f.key}" value="${esc(v ?? '')}">`;
+      return `<div class="field"><label>${esc(f.label)}${f.required ? '<span class="req">*</span>' : ''}</label>${input}${f.help ? `<div class="help">${esc(f.help)}</div>` : ''}</div>`;
+    }).join('')}
+    <div class="field"><label>마지막 수정 시각</label><input type="text" value="${esc(fmtDateTime(m.updatedAt))}" readonly><div class="help">설정을 변경하면 자동으로 갱신됩니다.</div></div>
+    </div>`;
+  const apply = el => {
+    const key = el.dataset.meta; const f = META_FIELDS.find(x => x.key === key);
+    if (f.type === 'checkbox') m[key] = el.checked;
+    else if (f.type === 'number' || f.type === 'int') { const n = toNum(el.value); if (n === null) return; if (f.min !== undefined && n < f.min) return; if (f.max !== undefined && n > f.max) return; m[key] = f.type === 'int' ? Math.round(n) : n; }
+    else { if (f.required && el.value === '') return; m[key] = el.value; }
+    adminTouched();
+  };
+  content.addEventListener('input', e => { if (e.target.dataset.meta && e.target.type !== 'checkbox') apply(e.target); });
+  content.addEventListener('change', e => { if (e.target.dataset.meta) { apply(e.target); if (e.target.type === 'checkbox') renderAdmin(); } });
+}
+
+function renderJsonPanel(content) {
+  content.innerHTML = `
+    <h3>JSON 관리</h3>
+    <p class="admin-desc">현재 설정을 JSON 파일로 내보내거나, 다른 환경에서 만든 설정을 가져옵니다. 가져오기 전에 유효성 검사를 하며 오류가 있으면 적용하지 않습니다.</p>
+    <div class="admin-toolbar">
+      <button type="button" class="btn primary" id="btnExport">JSON 내보내기</button>
+      <label class="btn" for="fileImport" style="display:inline-block">파일 선택</label><input type="file" id="fileImport" accept="application/json,.json" class="sr">
+      <button type="button" class="btn" id="btnImport">가져오기 실행</button>
+      <button type="button" class="btn danger" id="btnReset">기본 설정으로 복원</button>
+    </div>
+    <div id="jsonMsg"></div>
+    <textarea class="json" id="jsonText" placeholder="여기에 설정 JSON 을 붙여 넣거나, 파일을 선택하세요. 내보내기를 누르면 현재 설정이 표시됩니다."></textarea>`;
+  const msg = (html, cls) => { $('#jsonMsg', content).innerHTML = `<div class="alert ${cls}">${html}</div>`; };
+  $('#btnExport', content).addEventListener('click', () => {
+    const text = exportConfigJson(); $('#jsonText', content).value = text;
+    try {
+      const blob = new Blob([text], { type: 'application/json' }); const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = `owldb-pricing-config-${pricingDate()}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      msg('현재 설정을 파일로 내보냈습니다. 아래 텍스트를 복사해 사용할 수도 있습니다.', 'ok');
+    } catch (e) { msg('파일 저장을 시작할 수 없어 텍스트 영역에만 표시했습니다. 내용을 복사해 저장하세요.', 'warn'); }
+  });
+  $('#fileImport', content).addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { $('#jsonText', content).value = String(reader.result); msg(`파일 '${esc(file.name)}' 을 읽었습니다. "가져오기 실행" 을 눌러 적용하세요.`, 'ok'); };
+    reader.readAsText(file, 'utf-8');
+  });
+  $('#btnImport', content).addEventListener('click', () => {
+    const text = $('#jsonText', content).value.trim();
+    if (!text) return msg('가져올 JSON 이 없습니다.', 'warn');
+    const r = importConfigJson(text);
+    if (!r.ok) return msg(`<b>가져오기 실패: 다음 오류를 수정하세요 (${r.errors.length}건)</b><ul>${r.errors.slice(0, 50).map(x => `<li>${esc(x)}</li>`).join('')}${r.errors.length > 50 ? '<li>이하 생략</li>' : ''}</ul>`, 'error');
+    recalcAndRender(); renderAdmin();
+    const c = detectConflicts(pricingConfig);
+    $('#jsonMsg', $('#adminContent')).innerHTML = `<div class="alert ok">설정을 가져와 적용했습니다.${c.length ? ` 중복 또는 충돌 경고 ${c.length}건이 있으니 각 메뉴의 경고를 확인하세요.` : ''}</div>`;
+  });
+  $('#btnReset', content).addEventListener('click', () => {
+    if (!confirm('현재 설정을 버리고 코드에 내장된 기본 설정으로 복원할까요? 이 작업은 되돌릴 수 없습니다. 필요하면 먼저 JSON 으로 내보내세요.')) return;
+    resetConfig(); recalcAndRender(); renderAdmin();
+    $('#jsonMsg', $('#adminContent')).innerHTML = `<div class="alert ok">기본 설정으로 복원했습니다.</div>`;
+  });
+}
+
+/* ==========================================================================
+ * 9. 초기화
+ * ========================================================================== */
+function init() {
+  const loaded = loadConfig();
+  loadInputs();
+  buildVolumeBlocks();
+  bindFormEvents();
+  applyRuleDefaults(inputs, true);
+  recalcAndRender();
+  if (loaded.warning) { const a = document.createElement('div'); a.className = 'notice'; a.textContent = loaded.warning; $('.page').insertBefore(a, $('.layout')); }
+  $('#btnAdmin').addEventListener('click', openAdmin);
+  $('#btnAdminClose').addEventListener('click', closeAdmin);
+  $('#adminModal').addEventListener('click', e => { if (e.target === $('#adminModal')) closeAdmin(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#adminModal').hidden) closeAdmin(); });
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
