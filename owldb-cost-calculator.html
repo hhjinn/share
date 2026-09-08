@@ -297,6 +297,7 @@
         <div class="card-head"><span class="step">3</span><h2>스토리지 구성</h2></div>
         <div class="card-body">
           <div id="volumes"></div>
+          <div class="hint info" id="volumeNotice" hidden></div>
         </div>
       </div>
 
@@ -1493,18 +1494,15 @@ function renderForm() {
   const stAll = effectiveStorageTypes(inp.csp);
   const stOpts = stAll.map(s => { const off = allowedSt && !allowedSt.includes(s.code); return { value: s.code, label: s.code, sub: `${s.name}, ${pricingConfig.meta.currencySymbol}${s.pricePerGbMonth}/GB 월`, disabled: off, title: off ? `${getTopology(inp.topology)?.name || inp.topology} 구성에서는 사용할 수 없습니다.` : '' }; });
   const redoSize = computeRedoSize(inp);
+  const hiddenVolumes = [];
   for (const vd of VOLUME_DEFS) {
     const v = inp.volumes[vd.key];
     const enabled = volumeEnabled(vd, inp.dbType);
     const block = $(`#vol-${vd.key}`);
-    block.classList.toggle('disabled', !enabled);
-    const tag = $(`#volTag-${vd.key}`);
-    tag.textContent = enabled ? '' : '비용 계산 제외';
-    tag.className = 'tag' + (enabled ? '' : ' off');
-    tag.hidden = enabled;
-    const banner = $(`#volBanner-${vd.key}`);
-    banner.hidden = enabled;
-    if (!enabled) banner.textContent = getDbType(inp.dbType)?.notice || `${inp.dbType} 은 ${vd.label} 을 사용하지 않아 입력이 비활성화되고 비용에서 제외됩니다.`;
+    block.hidden = !enabled;
+    if (!enabled) hiddenVolumes.push(vd.label);
+    $(`#volTag-${vd.key}`).hidden = true;
+    $(`#volBanner-${vd.key}`).hidden = true;
     if (!stOpts.some(o => o.value === v.type) && stOpts.length) v.type = (stOpts.find(o => !o.disabled) || stOpts[0]).value;
     renderSeg(`${vd.key}_type`, stOpts.length ? stOpts.map(o => ({ ...o, disabled: o.disabled || !enabled })) : [{ value: '', label: '등록된 스토리지 유형 없음', disabled: true }], v.type);
     const st = stAll.find(s => s.code === v.type);
@@ -1536,6 +1534,9 @@ function renderForm() {
       setHint(`${vd.key}_mbps`, `${st.mbpsBillable === false ? '처리량 별도 과금 없음' : 'Mbps 구간 단가 누진 적용'}. ${rangeText(st.minMbps, st.maxMbps, 'Mbps')}`);
     } else { setHint(`${vd.key}_iops`, ''); setHint(`${vd.key}_mbps`, ''); }
   }
+  const vn = $('#volumeNotice');
+  vn.hidden = !hiddenVolumes.length;
+  if (hiddenVolumes.length) vn.textContent = `${hiddenVolumes.join(', ')} 제외: ` + (getDbType(inp.dbType)?.notice || `${inp.dbType} 은 이 볼륨을 구성하지 않으므로 표시하지 않으며 비용 계산에서 제외됩니다.`);
   const redoOn = volumeEnabled(VOLUME_DEFS[1], inp.dbType);
   $('#redoFileSizeMb').disabled = !redoOn;
   markPresets('redoFileSizeMb', inp.redoFileSizeMb);
@@ -1582,8 +1583,10 @@ function renderResult(res) {
     $('#compLegend').innerHTML = comp.map(l => `<span><i style="background:${LINE_COLORS[l.key] || '#94a3b8'}"></i>${esc(l.label)} ${(l.hourly / compTotal * 100).toFixed(1)}%</span>`).join('');
   }
 
-  // 상세 내역 표
-  const rows = res.lines.map(l => `
+  // 상세 내역 표 (제외 항목은 표에서 빼고 계산 근거에 이유만 표시)
+  const shownLines = res.lines.filter(l => !l.excluded);
+  const excludedLines = res.lines.filter(l => l.excluded);
+  const rows = shownLines.map(l => `
     <tr class="${l.excluded ? 'excluded' : ''}">
       <td><b>${esc(l.label)}</b><span class="basis">${esc(l.basis)}</span></td>
       <td>${esc(l.qty)}</td>
@@ -1595,10 +1598,10 @@ function renderResult(res) {
     <thead><tr><th>항목 / 적용 기준</th><th>수량</th><th>단가</th><th class="num">시간당</th><th class="num">월 (${fmtNum(res.H)}h)</th></tr></thead>
     <tbody>${rows || `<tr><td colspan="5" class="empty">표시할 항목이 없습니다.</td></tr>`}
     <tr class="total"><td>합계${res.ok ? '' : ' (계산 불가 항목 제외, 참고용)'}</td><td></td><td></td><td class="num">${esc(fmtMoney(res.totalHourly, m.hourlyDecimals, cfg))}</td><td class="num">${esc(fmtMoney(res.totalMonthly, m.monthlyDecimals, cfg))}</td></tr></tbody>`;
-  $('#breakdownCnt').textContent = `${res.lines.filter(l => !l.excluded).length}개 항목`;
+  $('#breakdownCnt').textContent = `${shownLines.length}개 항목`;
 
   // 계산 근거
-  const basis = res.lines.map(l => `
+  const basis = shownLines.map(l => `
     <li><div class="t">${esc(l.label)}${l.excluded ? ' <span class="tag off">제외</span>' : ''}</div>
       <div class="n">적용 기준: ${esc(l.basis)}</div>
       <div class="f">${esc(l.formula)}${l.excluded ? '' : `\n= ${esc(fmtNum(l.rawHourly, 8))} /시간 → ${esc(fmtMoney(l.hourly, m.hourlyDecimals, cfg))} /시간, ${esc(fmtMoney(l.monthly, m.monthlyDecimals, cfg))} /월`}</div>
@@ -1614,6 +1617,7 @@ function renderResult(res) {
       <dt>월 환산 시간</dt><dd>${fmtNum(res.H)} 시간</dd>
     </dl>
     <h4 style="font-size:13px;margin:8px 0">항목별 계산식</h4><ul class="basis-list">${basis}</ul>
+    ${excludedLines.length ? `<h4 style="font-size:13px;margin:8px 0">계산에서 제외된 항목</h4><ul class="basis-list">${excludedLines.map(l => `<li><div class="t">${esc(l.label)} <span class="tag off">제외</span></div><div class="n">${esc(l.basis)}</div></li>`).join('')}</ul>` : ''}
     <h4 style="font-size:13px;margin:8px 0">적용 규칙</h4><ul class="basis-list">${rules}</ul>`;
   $('#resultFoot').textContent = `가격 기준일 ${pricingDate()}, 설정 마지막 수정 ${fmtDateTime(m.updatedAt)}. 모든 금액은 ${m.currencyCode || ''} ${m.currencySymbol} 기준이며 세금은 포함되지 않았습니다.`;
 }
