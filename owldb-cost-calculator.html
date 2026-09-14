@@ -394,7 +394,7 @@ const DEFAULT_PRICING_CONFIG = {
   topologies: [
     { id: 'Single', name: 'Single', minBaseNodes: 1, maxBaseNodes: 1, allowedEditions: 'SE,EE', redoTopologyFactor: 2, storageMode: 'node',    allowedStorageTypes: '', description: '단일 노드 구성. SE 에디션은 Single 구성만 허용. 노드당 스토리지 1세트', active: true },
     { id: 'HA',     name: 'HA',     minBaseNodes: 1, maxBaseNodes: 1, allowedEditions: 'EE',    redoTopologyFactor: 2, storageMode: 'node',    allowedStorageTypes: '', description: 'OpenSQL 전용. Active 1 노드와 Standby 1 노드, EE 에디션만 허용. 노드당 스토리지 1세트', active: true },
-    { id: 'TAC',    name: 'TAC',    minBaseNodes: 2, maxBaseNodes: 4, allowedEditions: 'EE',    redoTopologyFactor: 4, storageMode: 'cluster', allowedStorageTypes: 'io2,ultra', description: 'Tibero Active Cluster. 기본 노드 2~4, EE 에디션만 허용. 클러스터가 공유 스토리지(io2, ultra) 1세트 사용, DR Standby 는 노드당 1세트', active: true }
+    { id: 'TAC',    name: 'TAC',    minBaseNodes: 2, maxBaseNodes: 4, allowedEditions: 'EE',    redoTopologyFactor: 4, storageMode: 'cluster', allowedStorageTypes: 'io2,p v2,ultra', description: 'Tibero Active Cluster. 기본 노드 2~4, EE 에디션만 허용. 클러스터가 공유 스토리지 1세트 사용(AWS io2, Azure p v2 또는 ultra), DR Standby 는 노드당 1세트', active: true }
   ],
   drRules: [
     { id: 'dr-opensql-single', dbType: 'OpenSQL', topology: 'Single', drAllowed: false, drRequired: false, standbyMin: 0, standbyMax: 0, standbyDefault: 0, readOnlyMax: 0, readOnlyLimitedByStandby: true, memo: 'OpenSQL Single 은 DR 미사용, Standby 0, Read Only 0 만 허용', active: true },
