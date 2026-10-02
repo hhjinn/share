@@ -658,7 +658,7 @@ const TABLE_SECTIONS = [
       ...COMMON_TAIL ],
     newRow: cfg => ({ id: 'root-' + Date.now(), csp: cfg.csps[0]?.id || '', sizeGbPerNode: 30, pricePerGbMonth: 0, startDate: '', endDate: '', memo: '', active: true }) },
 
-  { key: 'licensePrices', group: '가격', title: '라이선스 및 미터링 가격', desc: 'DB 유형, 구성 라벨(예: Single(SE), EE + TAC, HA(EE)), 가격 종류, vCPU 별 노드당 시간 단가입니다. 구성 라벨은 "노드 구성 라벨 규칙" 메뉴에서 노드 역할별로 정해지며, 라벨 이름이 서로 일치해야 합니다. 특정 vCPU 에 가격이 없으면 해당 인스턴스는 선택할 수 없습니다.',
+  { key: 'licensePrices', group: '가격', title: '라이선스 및 미터링 가격', desc: 'DB 유형, 구성 라벨(예: Single(SE), EE + TAC, HA(EE)), 가격 종류, vCPU 별 노드당 시간 단가입니다. 구성 라벨은 "노드 구성 라벨 규칙" 메뉴에서 노드 역할별로 정해지며, 라벨 이름이 서로 일치해야 합니다. 특정 vCPU 에 가격이 없으면 해당 인스턴스는 선택할 수 없습니다. 가격표의 가장 큰 vCPU 를 넘는 인스턴스(48, 64, 96)는 그 구간 단가를 씁니다. 32 vCPU 이상은 같은 단가입니다.',
     columns: [
       { key: 'id', label: 'ID', type: 'text', required: true },
       { key: 'dbType', label: 'DB 유형', type: 'select', options: cfg => optDbTypes(cfg, true), required: true },
@@ -996,10 +996,20 @@ function topologyAllowedStorage(topoId) {
 function findNodeConfig(inp, nodeRole) {
   return pickMostSpecific(pricingConfig.nodeConfigRules.filter(r => r.active !== false), ['dbType', 'topology', 'edition', 'nodeRole'], { dbType: inp.dbType, topology: inp.topology, edition: inp.edition, nodeRole });
 }
-/* 구성 라벨, 가격 종류, vCPU 에 맞는 라이선스 가격 */
+/* vCPU 구간. 가격표 전체의 가장 큰 vCPU(32) 를 넘는 인스턴스는 그 구간 단가를 쓴다 (48, 64, 96 → 32). 확인사항 14.
+   구성별 최대가 아니라 표 전체 최대를 기준으로 하므로 SE 16 vCPU 처럼 그 구성에 없는 칸은 그대로 가격 없음이다 */
+function licenseVcpuBand(vcpu) {
+  const vals = pricingConfig.licensePrices.filter(p => isEffective(p, pricingDate())).map(p => Number(p.vcpu));
+  const max = vals.length ? Math.max(...vals) : Number(vcpu);
+  return Number(vcpu) > max ? max : Number(vcpu);
+}
+/* 구성 라벨, 가격 종류, vCPU 구간에 맞는 라이선스 가격 */
 function findLicensePrice(inp, kind, config, vcpu) {
-  const cands = pricingConfig.licensePrices.filter(p => p.priceKind === kind && String(p.config).trim() === String(config).trim() && Number(p.vcpu) === Number(vcpu) && isEffective(p, pricingDate()));
-  return pickMostSpecific(cands, ['dbType', 'licenseType'], { dbType: inp.dbType, licenseType: inp.licenseType });
+  const band = licenseVcpuBand(vcpu);
+  const cands = pricingConfig.licensePrices.filter(p => p.priceKind === kind && String(p.config).trim() === String(config).trim() && Number(p.vcpu) === band && isEffective(p, pricingDate()));
+  const r = pickMostSpecific(cands, ['dbType', 'licenseType'], { dbType: inp.dbType, licenseType: inp.licenseType });
+  r.band = band;
+  return r;
 }
 /* 인스턴스가 현재 구성(기본 노드 라벨)에서 라이선스 가격을 갖는지 */
 function instanceHasPrice(inst, inp) {
@@ -1305,6 +1315,7 @@ function calculate(inp) {
         if (picked.conflict.length) { errors.push(`${kindName}: ${inp.dbType} / ${config} / ${inst.vcpu} vCPU 에 같은 구체성의 가격 항목 ${picked.conflict.map(c => c.id).join(', ')} 이 겹쳐 적용할 가격을 정할 수 없습니다.`); continue; }
         if (!picked.item) { errors.push(`${kindName}: ${inp.dbType} / ${lt.name} / ${config} / ${inst.vcpu} vCPU 조건에 등록된 가격이 없습니다. 가격표에 '-' 로 표시된 조합이거나 미등록 상태입니다. 다른 인스턴스(vCPU)를 선택하거나 관리자 설정에서 가격을 등록하세요.`); continue; }
         const p = picked.item, price = Number(p.price);
+        if (picked.band !== inst.vcpu && !rules.some(r => r.title === 'vCPU 구간')) rules.push({ title: 'vCPU 구간', note: `${inst.vcpu} vCPU 는 가격표의 최대 구간인 ${picked.band} vCPU 단가를 적용합니다. 32 vCPU 이상은 같은 단가입니다.` });
         let qty, qtyText, formula;
         if (p.unit === 'vcpu-hour') { qty = inst.vcpu * grp.count; qtyText = `${inst.vcpu} vCPU × ${grp.count} 노드 = ${qty} vCPU`; formula = `${price} × ${inst.vcpu} vCPU × ${grp.count} 노드`; }
         else if (p.unit === 'node-hour') { qty = grp.count; qtyText = `${grp.count} 노드`; formula = `${price} × ${grp.count} 노드`; }
