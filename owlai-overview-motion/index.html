@@ -747,7 +747,8 @@ function toggleDd(){if(dd)return closeDd();dd=document.createElement('div');dd.c
 document.addEventListener('click',function(e){if(dd&&!res.contains(e.target))closeDd()});
 
 // GNB, 플로팅
-var GL={ko:[['기능','요금제','리소스','설치형'],['도입 문의','OwlAI 사용하기']],en:[['Features','Pricing','Resources','On-premises'],['Contact sales','Try OwlAI']]};
+var GL={ko:[['기능','요금제','리소스','설치형'],['도입 문의','OwlAI 사용하기']],en:[['Features','Pricing','Resources','On-premises'],['Contact us','Try OwlAI'],'Get brochure']};
+GL.ko.push('소개서 받기');
 [].forEach.call(document.querySelectorAll('.gnav a'),function(a,i){a.onclick=function(e){e.stopPropagation();act(['s:s5','p:pricing','res',INST][i])}});
 $('.glogo').onclick=function(){act('home')};
 $('.gbtn.ghost').onclick=function(){act('p:contact')};
@@ -755,7 +756,7 @@ $('.gbtn.pri').onclick=function(){act('p:app')};
 fab.onclick=function(){act(PV==='sent'?'m:sent':'m:brochure')};
 function setLang(l){document.documentElement.lang=l;document.querySelectorAll('.lang button').forEach(function(x){x.classList.toggle('on',x.dataset.l===l)});
  [].forEach.call(document.querySelectorAll('.gnav a'),function(a,i){a.firstChild.nodeValue=GL[l][0][i]});
- $('.gbtn.ghost').textContent=GL[l][1][0];$('.gbtn.pri').textContent=GL[l][1][1]}
+ $('.gbtn.ghost').textContent=GL[l][1][0];$('.gbtn.pri').textContent=GL[l][1][1];fab.lastChild.nodeValue=GL[l][2]}
 
 // FAQ: 한 번에 하나만 열림. 열린 질문을 다시 누르면 1번 펼침(기본)으로
 function faq(o){var cur=1,rows=[],ov=o.ov;
