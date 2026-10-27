@@ -696,6 +696,7 @@ function FT(y,ko){return [[816,92,48,32,'s:s5'],[816,125,56,32,'p:pricing'],[816
  [1219,92,60,32,'t:이용약관 페이지는 준비 중입니다'],[1219,125,106,32,'t:개인정보처리방침 페이지는 준비 중입니다']]
  .concat(ko?[[124,144,34,30,''],[158,144,34,30,'p:en']]:[]).map(function(a){return [a[0],a[1]+y,a[2],a[3],a[4]]})}
 var SIDE=[[16,778,130,34,'home'],[16,814,130,34,'p:pricing'],[16,850,130,34,'p:contact']];
+var ENTAB='t:영문 탭 전환 화면은 시안 없음 (한국어 화면에서 확인)';
 var LOGIN='t:로그인하면 질문이 입력창에 채워진 첫 화면으로 돌아갑니다 (이 화면은 시안 없음)';
 var PG={
  pricing:{img:'pg-pricing',hot:[[153,662,320,52,'p:app'],[560,663,320,52,'p:app'],[967,662,320,52,'p:contact'],[116,3256,84,34,'p:contact'],
@@ -707,7 +708,18 @@ var PG={
  sent:{img:'pg-contact-sent',hot:[[145,714,160,43,'m:sent'],[796,843,139,53,'m:sent'],[947,843,141,51,'p:app']].concat(FT(1250,1))},
  quote:{img:'pg-quote',hot:[[605,233,86,41,'p:contact'],[1172,305,100,40,'p:pricing'],[145,714,160,43,'m:brochure'],
   [605,1266,674,56,'t:견적 요청을 보낸 뒤 화면은 시안 없음']].concat(FT(1475,1))},
- en:{img:'pg-en',hot:[[124,9419,34,30,'home']]},
+ // 영문 소개: 한국어 소개와 같은 버튼. 탭 변형은 영문 시안이 없어 안내만 띄움
+ en:{img:'pg-en',hot:[[1041,659,44,44,'p:login'],
+  [90,3529,420,92,ENTAB],[510,3529,420,92,ENTAB],[930,3529,420,92,ENTAB],[1106,4259,250,34,MAN],
+  [120,4928,107,43,ENTAB],[235,4928,96,45,ENTAB],[339,4928,101,45,ENTAB],[448,4928,118,45,ENTAB],[574,4928,92,45,ENTAB],
+  [160,5278,380,53,ENTAB],[160,5339,380,51,ENTAB],[160,5398,380,51,ENTAB],[156,5636,190,36,'p:login'],
+  [981,6047,210,49,INST],[1200,6047,120,49,'p:contact'],[1020,7717,134,56,'p:contact'],[1166,7717,154,54,'p:pricing'],
+  [116,8280,104,34,'p:contact'],[977,8960,92,51,'p:login'],[628,9038,184,34,'p:contact'],
+  [771,9367,63,32,'s:s5'],[771,9400,51,32,'p:pricing'],[771,9433,89,32,INST],[771,9466,71,32,'t:다운로드 페이지는 준비 중입니다'],
+  [916,9367,103,32,MAN],[916,9400,81,32,'p:updates'],[1075,9367,81,32,'t:회사 소개(회사 홈페이지)로 이동합니다. URL 미정'],[1075,9400,77,32,'p:contact'],
+  [1212,9367,112,32,'t:이용약관 페이지는 준비 중입니다'],[1212,9400,95,32,'t:개인정보처리방침 페이지는 준비 중입니다'],[124,9419,34,30,'home']],
+  faq:{y:7958,x:560,w:760,dy:27,rh:81,img:'efaq-',q:{1:[139,279,360,441,522,603],2:[139,220,360,441,522,603],3:[139,220,301,465,546,627],
+   4:[139,220,301,382,546,627],5:[139,220,301,382,463,627],6:[139,220,301,382,463,544]}}},
  app:{img:'app-first',app:1,hot:SIDE.concat([[495,375,735,110,'p:login'],[1255,18,70,36,'p:login'],[1340,18,80,36,'p:login']])},
  login:{img:'app-login',app:1,hot:SIDE.concat([[905,238,44,42,'p:app'],[520,392,400,250,LOGIN]])}
 };
@@ -725,6 +737,7 @@ function act(s){if(!s)return;var k=s.split(':')[0],v=s.slice(k.length+1);if(s!==
  else if(k==='m')modal(v);
  // 시안 페이지에서 소개 페이지로 갈 때는 페이지가 덮고 있는 동안 위치를 옮겨 두고 흐리게 걷어 냄
  // (location.hash='' 는 맨 위로 스크롤되므로 주소만 바꾸고 직접 전환)
+ else if(k==='s'&&PV==='en')pv.scrollTo({top:{s5:3207}[v]||0,behavior:RM?'auto':'smooth'});  // 영문 소개 안에서 섹션 이동
  else if(k==='s'){if(PV){H.classList.remove('pvon');void H.offsetHeight;$('#'+v).scrollIntoView();history.pushState(null,'',location.pathname+location.search);route()}else $('#'+v).scrollIntoView({behavior:RM?'auto':'smooth'})}
  else if(s==='home'){if(PV){H.classList.remove('pvon');scrollTo(0,0);location.hash=''}else scrollTo({top:0,behavior:RM?'auto':'smooth'})}
  else if(s==='res')toggleDd()}
@@ -797,7 +810,7 @@ function route(){var k=location.hash.slice(1),P=PG[k],id=++rid,was=!!PV,src=P&&'
 addEventListener('hashchange',route);route();
 // 첫 화면을 다 띄운 뒤 시안 페이지와 창 이미지를 차례로 미리 받아 둠
 addEventListener('load',function(){later(1500).then(function(){
- var L=['md-brochure','md-sent','dd-resource','faq-2','faq-3','faq-4','faq-5','faq-6'];
+ var L=['md-brochure','md-sent','dd-resource','faq-2','faq-3','faq-4','faq-5','faq-6','efaq-2','efaq-3','efaq-4','efaq-5','efaq-6'];
  ['contact','pricing','app','login','sent','quote','updates','en'].forEach(function(k){L.push(PG[k].img,PG[k].img+'-l',PG[k].img+'-r')});
  L.reduce(function(p,f){return p.then(function(){return load('img/'+f+'.png')})},Promise.resolve())})});
 })();
