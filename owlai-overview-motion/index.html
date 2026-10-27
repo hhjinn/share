@@ -795,17 +795,17 @@ FT(0).forEach(function(a){hot($('#ft .in'),a)});
 // 페이지 전환: 다음 화면 색의 막으로 덮고, 이미지가 준비되면 문서 내용을 바꿔 끼운 뒤 막을 걷음
 // 소개 페이지는 숨기기만 하므로 돌아오면 보던 위치로 돌아감
 var rid=0,mainY=0,afterMain=null,veil=$('#veil'),BG={pricing:'#000f24',en:'#000f24',app:'#f7f8fa',login:'#f7f8fa'};
-function route(){var k=location.hash.slice(1),P=PG[k],id=++rid,src=P&&'img/'+P.img+'.png';closeDd();closeMd();
+function route(){var k=location.hash.slice(1),P=PG[k],id=++rid,src=P&&'img/'+P.img+'.png?v=5';closeDd();closeMd();
  if(!P&&!PV)return setLang('ko');
  if(P&&!PV)mainY=scrollY;
  veil.style.background=P?(BG[k]||'#fff'):(afterMain?afterMain.bg:'#fff');veil.classList.add('on');
- Promise.all([P?Promise.all([load(src),load('img/'+P.img+'-l.png?v=4'),load('img/'+P.img+'-r.png?v=4')]):0,later(230)]).then(function(){
+ Promise.all([P?Promise.all([load(src),load('img/'+P.img+'-l.png?v=5'),load('img/'+P.img+'-r.png?v=5')]):0,later(230)]).then(function(){
   if(id!==rid)return;
   [].slice.call(pvin.querySelectorAll('.hot')).forEach(function(e){e.remove()});
   if(!P){PV=null;pv.hidden=true;H.classList.remove('pvon','appv');setLang('ko');
    if(afterMain)afterMain.go();else scrollTo(0,mainY);afterMain=null}
   else{PV=k;pvimg.src=src;
-   ['l','r'].forEach(function(s){var e=$('.pv'+s);e.style.backgroundImage='url(img/'+P.img+'-'+s+'.png?v=4)';e.style.backgroundSize=(P.app?1:48)+'px auto'});
+   ['l','r'].forEach(function(s){var e=$('.pv'+s);e.style.backgroundImage='url(img/'+P.img+'-'+s+'.png?v=5)';e.style.backgroundSize=(P.app?1:48)+'px auto'});
    H.classList.add('pvon');H.classList.toggle('appv',!!P.app);setLang(k==='en'?'en':'ko');
    P.hot.forEach(function(a){hot(pvin,a)});
    pvfaq.hidden=true;pvfaq.classList.add('out');
@@ -816,7 +816,7 @@ addEventListener('hashchange',route);route();
 // 첫 화면을 다 띄운 뒤 시안 페이지와 창 이미지를 차례로 미리 받아 둠
 addEventListener('load',function(){later(1500).then(function(){
  var L=['md-brochure','md-sent','dd-resource','faq-2','faq-3','faq-4','faq-5','faq-6','efaq-2','efaq-3','efaq-4','efaq-5','efaq-6'];
- ['contact','pricing','app','login','sent','quote','updates','en'].forEach(function(k){L.push(PG[k].img,PG[k].img+'-l.png?v=4',PG[k].img+'-r.png?v=4')});
+ ['contact','pricing','app','login','sent','quote','updates','en'].forEach(function(k){L.push(PG[k].img+'.png?v=5',PG[k].img+'-l.png?v=5',PG[k].img+'-r.png?v=5')});
  L.reduce(function(p,f){return p.then(function(){return load('img/'+f+(f.indexOf('?')<0?'.png':''))})},Promise.resolve())})});
 })();
 </script>
