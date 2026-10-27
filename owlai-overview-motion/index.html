@@ -799,13 +799,13 @@ function route(){var k=location.hash.slice(1),P=PG[k],id=++rid,src=P&&'img/'+P.i
  if(!P&&!PV)return setLang('ko');
  if(P&&!PV)mainY=scrollY;
  veil.style.background=P?(BG[k]||'#fff'):(afterMain?afterMain.bg:'#fff');veil.classList.add('on');
- Promise.all([P?Promise.all([load(src),load('img/'+P.img+'-l.png?v=2'),load('img/'+P.img+'-r.png?v=2')]):0,later(230)]).then(function(){
+ Promise.all([P?Promise.all([load(src),load('img/'+P.img+'-l.png?v=3'),load('img/'+P.img+'-r.png?v=3')]):0,later(230)]).then(function(){
   if(id!==rid)return;
   [].slice.call(pvin.querySelectorAll('.hot')).forEach(function(e){e.remove()});
   if(!P){PV=null;pv.hidden=true;H.classList.remove('pvon','appv');setLang('ko');
    if(afterMain)afterMain.go();else scrollTo(0,mainY);afterMain=null}
   else{PV=k;pvimg.src=src;
-   ['l','r'].forEach(function(s){var e=$('.pv'+s);e.style.backgroundImage='url(img/'+P.img+'-'+s+'.png?v=2)';e.style.backgroundSize=(P.app?1:48)+'px auto'});
+   ['l','r'].forEach(function(s){var e=$('.pv'+s);e.style.backgroundImage='url(img/'+P.img+'-'+s+'.png?v=3)';e.style.backgroundSize=(P.app?1:48)+'px auto'});
    H.classList.add('pvon');H.classList.toggle('appv',!!P.app);setLang(k==='en'?'en':'ko');
    P.hot.forEach(function(a){hot(pvin,a)});
    pvfaq.hidden=true;pvfaq.classList.add('out');
@@ -816,7 +816,7 @@ addEventListener('hashchange',route);route();
 // 첫 화면을 다 띄운 뒤 시안 페이지와 창 이미지를 차례로 미리 받아 둠
 addEventListener('load',function(){later(1500).then(function(){
  var L=['md-brochure','md-sent','dd-resource','faq-2','faq-3','faq-4','faq-5','faq-6','efaq-2','efaq-3','efaq-4','efaq-5','efaq-6'];
- ['contact','pricing','app','login','sent','quote','updates','en'].forEach(function(k){L.push(PG[k].img,PG[k].img+'-l.png?v=2',PG[k].img+'-r.png?v=2')});
+ ['contact','pricing','app','login','sent','quote','updates','en'].forEach(function(k){L.push(PG[k].img,PG[k].img+'-l.png?v=3',PG[k].img+'-r.png?v=3')});
  L.reduce(function(p,f){return p.then(function(){return load('img/'+f+(f.indexOf('?')<0?'.png':''))})},Promise.resolve())})});
 })();
 </script>
