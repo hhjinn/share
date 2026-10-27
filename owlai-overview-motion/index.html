@@ -283,7 +283,7 @@ img{display:block}
 .dd{animation:ddIn .2s ease-out}
 @keyframes ddIn{from{opacity:0;transform:translateY(-6px)}}
 html.pvon .s,html.pvon #pin,html.pvon #stage,html.pvon #fly{display:none}
-html.app .gnb,html.app .fab,html.app .totop{display:none}
+html.appv .gnb,html.appv .fab,html.appv .totop{display:none}
 .faqv{position:absolute;left:0;top:0;width:1440px;z-index:2;transition:opacity .2s}
 .faqv.out,#pvfaq.out{opacity:0}
 .fab{cursor:pointer}
@@ -691,7 +691,7 @@ document.querySelectorAll('.lang button').forEach(function(b){b.addEventListener
 // 클릭 연결 (Figma 클릭 이벤트 시나리오 보드 2417:22 기준)
 // 모션 시안에 없는 화면은 Figma 시안 이미지를 페이지로 연다. 주소가 #pricing 처럼 바뀌어 뒤로 가기가 된다
 // 좌표는 Figma 프레임 기준 [x, y, 너비, 높이, 동작]
-// 동작: p:페이지, s:소개 페이지 섹션, m:창, t:안내 문구, home, res(리소스 메뉴)
+// 동작: p:페이지, s:소개 페이지 섹션, m:창, t:안내 문구, home, close(소개 페이지로 돌아가기), res(리소스 메뉴)
 var MAN='t:사용자 매뉴얼(GitBook)로 이동합니다. URL 미정',INST='t:회사 홈페이지 설치형 소개로 이동합니다. URL 미정';
 function FT(y,ko){return [[816,92,48,32,'s:s5'],[816,125,56,32,'p:pricing'],[816,158,56,32,INST],[816,191,64,32,'t:다운로드 페이지는 준비 중입니다'],
  [929,92,104,32,MAN],[929,125,88,32,'p:updates'],[1086,92,80,32,'t:회사 소개(회사 홈페이지)로 이동합니다. URL 미정'],[1086,125,64,32,'p:contact'],
@@ -723,7 +723,7 @@ var PG={
   faq:{y:7958,x:560,w:760,dy:27,rh:81,img:'efaq-',q:{1:[139,279,360,441,522,603],2:[139,220,360,441,522,603],3:[139,220,301,465,546,627],
    4:[139,220,301,382,546,627],5:[139,220,301,382,463,627],6:[139,220,301,382,463,544]}}},
  app:{img:'app-first',app:1,hot:SIDE.concat([[495,375,735,110,'p:login'],[1255,18,70,36,'p:login'],[1340,18,80,36,'p:login']])},
- login:{img:'app-login',app:1,hot:SIDE.concat([[905,238,44,42,'p:app'],[520,392,400,250,LOGIN]])}
+ login:{img:'app-login',app:1,hot:SIDE.concat([[905,238,44,42,'close'],[520,392,400,250,LOGIN]])}
 };
 var pv=$('#pv'),pvin=$('#pv .pvin'),pvimg=$('#pvimg'),pvfaq=$('#pvfaq'),md=$('#md'),mdimg=$('#mdimg'),PV=null,tt,H=document.documentElement;
 function later(ms){return new Promise(function(r){setTimeout(r,RM?0:ms)})}
@@ -742,6 +742,7 @@ function act(s){if(!s)return;var k=s.split(':')[0],v=s.slice(k.length+1);if(s!==
  else if(k==='s'&&PV==='en')scrollTo({top:({s5:3207}[v]||0)*(parseFloat(H.style.zoom)||1),behavior:RM?'auto':'smooth'});  // 영문 소개 안에서 섹션 이동
  else if(k==='s'){if(PV){afterMain={bg:'#f4f4f8',go:function(){$('#'+v).scrollIntoView()}};history.pushState(null,'',location.pathname+location.search);route()}else $('#'+v).scrollIntoView({behavior:RM?'auto':'smooth'})}
  else if(s==='home'){if(PV){afterMain={bg:'#000f24',go:function(){scrollTo(0,0)}};location.hash=''}else scrollTo({top:0,behavior:RM?'auto':'smooth'})}
+ else if(s==='close'){afterMain=null;history.pushState(null,'',location.pathname+location.search);route()}  // 소개 페이지의 보던 위치로
  else if(s==='res')toggleDd()}
 
 // 창: 소개서 받기 (그림자 여백 64, 40 만큼 안쪽 좌표를 밂)
@@ -802,11 +803,11 @@ function route(){var k=location.hash.slice(1),P=PG[k],id=++rid,src=P&&'img/'+P.i
  Promise.all([P?Promise.all([load(src),load('img/'+P.img+'-l.png?v=2'),load('img/'+P.img+'-r.png?v=2')]):0,later(230)]).then(function(){
   if(id!==rid)return;
   [].slice.call(pvin.querySelectorAll('.hot')).forEach(function(e){e.remove()});
-  if(!P){PV=null;pv.hidden=true;H.classList.remove('pvon','app');setLang('ko');
+  if(!P){PV=null;pv.hidden=true;H.classList.remove('pvon','appv');setLang('ko');
    if(afterMain)afterMain.go();else scrollTo(0,mainY);afterMain=null}
   else{PV=k;pvimg.src=src;
    ['l','r'].forEach(function(s){var e=$('.pv'+s);e.style.backgroundImage='url(img/'+P.img+'-'+s+'.png?v=2)';e.style.backgroundSize=(P.app?1:48)+'px auto'});
-   H.classList.add('pvon');H.classList.toggle('app',!!P.app);setLang(k==='en'?'en':'ko');
+   H.classList.add('pvon');H.classList.toggle('appv',!!P.app);setLang(k==='en'?'en':'ko');
    P.hot.forEach(function(a){hot(pvin,a)});
    pvfaq.hidden=true;pvfaq.classList.add('out');
    if(P.faq){pvfaq.style.top=P.faq.y+'px';faq({host:pvin,ov:pvfaq,x:P.faq.x,w:P.faq.w,top:P.faq.y,dy:P.faq.dy,rh:P.faq.rh,img:P.faq.img,q:P.faq.q})}
