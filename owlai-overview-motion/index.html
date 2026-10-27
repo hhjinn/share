@@ -310,7 +310,7 @@ html.rm *,html.rm *::before,html.rm *::after{animation:none!important;transition
 
 <header class="gnb" id="gnb">
  <a class="glogo" aria-label="OwlAI"><img src="img/logo-white.png" width="128" height="32" alt="OwlAI"></a>
- <nav class="gnav"><a>기능</a><a>요금제</a><a class="res">리소스<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></a><a>설치형</a></nav>
+ <nav class="gnav"><a>기능</a><a>요금제</a><a class="res">리소스<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></a><a>구축형</a></nav>
  <div class="gright">
   <div class="lang" role="group" aria-label="언어"><button class="on" data-l="ko">KO</button><button data-l="en">EN</button></div>
   <a class="gbtn ghost">도입 문의</a><a class="gbtn pri">OwlAI 사용하기</a>
@@ -459,7 +459,7 @@ var U={
   ['2349-147',120,724,389,0,'glow lift'],['2349-155',525,724,389,1,'glow lift'],['2349-162',931,724,389,2,'glow lift'],
   ['2349-170',120,937,389,1,'glow lift'],['2349-177',525,937,389,2,'glow lift'],['2349-184',931,937,389,3,'glow lift'],
   ['2349-192',120,1190,1200,0]],
- s8:[['2334-1107',120,111,432,0,'ttl'],['2334-1122',1050,186,270,2]],
+ s8:[['2334-1107',120,111,398.5,0,'ttl'],['2334-1122',1050,186,270,2]],
  s9:[['2334-1128',120,112,360,0,'ttl'],['2334-1136',560,112,760,1],['2334-1142',560,252,760,2],['2334-1147',560,333,760,3],['2334-1152',560,414,760,4],['2334-1157',560,495,760,5],['2334-1162',560,576,760,6]],
  s10:[['2334-1307',563,104,313,0,'ttl'],['2334-1308',389,179,661,1],['2334-1309',310,188,820,2],['2334-1316',642,322,156,3]],
  ft:[['2334-1318',120,65,1200,0],['2334-1341',120,258,1200,1]]
@@ -692,7 +692,7 @@ document.querySelectorAll('.lang button').forEach(function(b){b.addEventListener
 // 모션 시안에 없는 화면은 Figma 시안 이미지를 페이지로 연다. 주소가 #pricing 처럼 바뀌어 뒤로 가기가 된다
 // 좌표는 Figma 프레임 기준 [x, y, 너비, 높이, 동작]
 // 동작: p:페이지, s:소개 페이지 섹션, m:창, t:안내 문구, home, res(리소스 메뉴)
-var MAN='t:사용자 매뉴얼(GitBook)로 이동합니다. URL 미정',INST='t:회사 홈페이지 설치형 소개로 이동합니다. URL 미정';
+var MAN='t:사용자 매뉴얼(GitBook)로 이동합니다. URL 미정',INST='t:회사 홈페이지 구축형 소개로 이동합니다. URL 미정';
 function FT(y,ko){return [[816,92,48,32,'s:s5'],[816,125,56,32,'p:pricing'],[816,158,56,32,INST],[816,191,64,32,'t:다운로드 페이지는 준비 중입니다'],
  [929,92,104,32,MAN],[929,125,88,32,'p:updates'],[1086,92,80,32,'t:회사 소개(회사 홈페이지)로 이동합니다. URL 미정'],[1086,125,64,32,'p:contact'],
  [1219,92,60,32,'t:이용약관 페이지는 준비 중입니다'],[1219,125,106,32,'t:개인정보처리방침 페이지는 준비 중입니다']]
@@ -701,11 +701,11 @@ var SIDE=[[16,778,130,34,'home'],[16,814,130,34,'p:pricing'],[16,850,130,34,'p:c
 var ENTAB='t:영문 탭 전환 화면은 시안 없음 (한국어 화면에서 확인)';
 var LOGIN='t:로그인하면 질문이 입력창에 채워진 첫 화면으로 돌아갑니다 (이 화면은 시안 없음)';
 var PG={
- pricing:{img:'pg-pricing',hot:[[153,662,320,52,'p:app'],[560,663,320,52,'p:app'],[967,662,320,52,'p:contact'],[116,3256,84,34,'p:contact'],
-  [1041,3826,115,53,'m:brochure'],[1168,3826,100,51,'p:contact']].concat(FT(4034,1)),
-  faq:{y:3058,x:540,w:790,dy:24,rh:72,img:'pfaq-',q:{1:[128,261,336,411,486,561],2:[128,203,336,411,486,561],3:[128,203,278,411,486,561],
+ pricing:{img:'pg-pricing',hot:[[153,660,320,52,'p:app'],[560,660,320,52,'p:app'],[967,660,320,52,'p:contact'],[116,3238,84,34,'p:contact'],
+  [1041,3808,115,53,'m:brochure'],[1168,3808,100,51,'p:contact']].concat(FT(4016,1)),
+  faq:{y:3040,x:540,w:790,dy:24,rh:72,img:'pfaq-',q:{1:[128,261,336,411,486,561],2:[128,203,336,411,486,561],3:[128,203,278,411,486,561],
    4:[128,203,278,353,486,561],5:[128,203,278,353,428,561],6:[128,203,278,353,428,503]}}},
- updates:{img:'pg-updates',hot:[[136,676,104,34,MAN],[816,2903,112,34,'t:다음 목록은 시안 없음']].concat(FT(3059,1))},
+ updates:{img:'pg-updates',hot:[[136,672,104,34,MAN],[816,2890,112,34,'t:다음 목록은 시안 없음']].concat(FT(3047,1))},
  contact:{img:'pg-contact',hot:[[719,233,59,41,'p:quote'],[145,714,160,43,'m:brochure'],[605,1041,674,56,'p:sent']].concat(FT(1250,1))},
  sent:{img:'pg-contact-sent',hot:[[145,714,160,43,'m:sent'],[796,843,139,53,'m:sent'],[947,843,141,51,'p:app']].concat(FT(1250,1))},
  quote:{img:'pg-quote',hot:[[605,233,86,41,'p:contact'],[1172,305,100,40,'p:pricing'],[145,714,160,43,'m:brochure'],
@@ -762,7 +762,7 @@ function toggleDd(){if(dd)return closeDd();dd=document.createElement('div');dd.c
 document.addEventListener('click',function(e){if(dd&&!res.contains(e.target))closeDd()});
 
 // GNB, 플로팅
-var GL={ko:[['기능','요금제','리소스','설치형'],['도입 문의','OwlAI 사용하기']],en:[['Features','Pricing','Resources','On-premises'],['Contact us','Try OwlAI'],'Get brochure']};
+var GL={ko:[['기능','요금제','리소스','구축형'],['도입 문의','OwlAI 사용하기']],en:[['Features','Pricing','Resources','On-premises'],['Contact us','Try OwlAI'],'Get brochure']};
 GL.ko.push('소개서 받기');
 [].forEach.call(document.querySelectorAll('.gnav a'),function(a,i){a.onclick=function(e){e.stopPropagation();act(['s:s5','p:pricing','res',INST][i])}});
 $('.glogo').onclick=function(){act('home')};
@@ -799,13 +799,13 @@ function route(){var k=location.hash.slice(1),P=PG[k],id=++rid,src=P&&'img/'+P.i
  if(!P&&!PV)return setLang('ko');
  if(P&&!PV)mainY=scrollY;
  veil.style.background=P?(BG[k]||'#fff'):(afterMain?afterMain.bg:'#fff');veil.classList.add('on');
- Promise.all([P?Promise.all([load(src),load('img/'+P.img+'-l.png?v=3'),load('img/'+P.img+'-r.png?v=3')]):0,later(230)]).then(function(){
+ Promise.all([P?Promise.all([load(src),load('img/'+P.img+'-l.png?v=4'),load('img/'+P.img+'-r.png?v=4')]):0,later(230)]).then(function(){
   if(id!==rid)return;
   [].slice.call(pvin.querySelectorAll('.hot')).forEach(function(e){e.remove()});
   if(!P){PV=null;pv.hidden=true;H.classList.remove('pvon','appv');setLang('ko');
    if(afterMain)afterMain.go();else scrollTo(0,mainY);afterMain=null}
   else{PV=k;pvimg.src=src;
-   ['l','r'].forEach(function(s){var e=$('.pv'+s);e.style.backgroundImage='url(img/'+P.img+'-'+s+'.png?v=3)';e.style.backgroundSize=(P.app?1:48)+'px auto'});
+   ['l','r'].forEach(function(s){var e=$('.pv'+s);e.style.backgroundImage='url(img/'+P.img+'-'+s+'.png?v=4)';e.style.backgroundSize=(P.app?1:48)+'px auto'});
    H.classList.add('pvon');H.classList.toggle('appv',!!P.app);setLang(k==='en'?'en':'ko');
    P.hot.forEach(function(a){hot(pvin,a)});
    pvfaq.hidden=true;pvfaq.classList.add('out');
@@ -816,7 +816,7 @@ addEventListener('hashchange',route);route();
 // 첫 화면을 다 띄운 뒤 시안 페이지와 창 이미지를 차례로 미리 받아 둠
 addEventListener('load',function(){later(1500).then(function(){
  var L=['md-brochure','md-sent','dd-resource','faq-2','faq-3','faq-4','faq-5','faq-6','efaq-2','efaq-3','efaq-4','efaq-5','efaq-6'];
- ['contact','pricing','app','login','sent','quote','updates','en'].forEach(function(k){L.push(PG[k].img,PG[k].img+'-l.png?v=3',PG[k].img+'-r.png?v=3')});
+ ['contact','pricing','app','login','sent','quote','updates','en'].forEach(function(k){L.push(PG[k].img,PG[k].img+'-l.png?v=4',PG[k].img+'-r.png?v=4')});
  L.reduce(function(p,f){return p.then(function(){return load('img/'+f+(f.indexOf('?')<0?'.png':''))})},Promise.resolve())})});
 })();
 </script>
