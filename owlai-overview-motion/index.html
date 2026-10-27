@@ -424,9 +424,9 @@ html.rm *,html.rm *::before,html.rm *::after{animation:none!important;transition
 <script>
 (function(){
 var $=function(s,r){return (r||document).querySelector(s)};
-// 동작 줄이기 설정이면 끈다. 시안 검토용으로 ?motion=1 이면 강제로 켠다
-var force=/[?&]motion=1/.test(location.search);
-var RM=!force&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+// 시안 검토용이라 OS 의 동작 줄이기 설정과 상관없이 모션을 켠다. ?motion=0 이면 끈다
+// (실제 사이트는 prefers-reduced-motion 을 따른다. 모션 명세서 참고)
+var RM=/[?&]motion=0/.test(location.search);
 if(RM)document.documentElement.classList.add('rm');
 // 1440 기준 시안이라 좁은 창에서는 전체를 줄여 보여 준다
 function fit(){document.documentElement.style.zoom=Math.min(1,innerWidth/1440)}fit();addEventListener('resize',fit);
