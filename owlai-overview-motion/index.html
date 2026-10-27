@@ -268,10 +268,11 @@ img{display:block}
 .totop:hover{background:#f4f4f8}
 
 /* 클릭 연결: Figma 시안 페이지, 창, 드롭다운, 안내 */
-#pv{position:fixed;inset:0;z-index:45;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;background:#fff;opacity:0;transition:opacity .28s ease}
-#pv.on{opacity:1}
-.pvin{position:relative;width:1440px;margin:0 auto;transition:opacity .18s ease}
-.pvin.out{opacity:0}
+#pv{position:relative;overflow:hidden;background:#fff}
+.pvin{position:relative;width:1440px;margin:0 auto}
+/* 화면 전환 막: 다음 화면 색으로 잠깐 덮었다 걷음 (GNB 아래) */
+#veil{position:fixed;inset:0;z-index:46;pointer-events:none;opacity:0;transition:opacity .22s ease}
+#veil.on{opacity:1}
 /* 넓은 화면 양옆: 이미지 가장자리 띠(격자 한 칸)를 반복해 배경을 이어 줌 */
 .pvl,.pvr{position:absolute;top:0;bottom:0;width:2400px;background-repeat:repeat-x}
 .pvl{right:100%;background-position:right top}
@@ -281,7 +282,7 @@ img{display:block}
 #s9{transition:height .35s cubic-bezier(.2,.8,.2,1)}
 .dd{animation:ddIn .2s ease-out}
 @keyframes ddIn{from{opacity:0;transform:translateY(-6px)}}
-html.pvon{overflow:hidden}
+html.pvon .s,html.pvon #pin,html.pvon #stage,html.pvon #fly{display:none}
 html.app .gnb,html.app .fab,html.app .totop{display:none}
 .faqv{position:absolute;left:0;top:0;width:1440px;z-index:2;transition:opacity .2s}
 .faqv.out,#pvfaq.out{opacity:0}
@@ -430,6 +431,7 @@ html.rm *,html.rm *::before,html.rm *::after{animation:none!important;transition
 <div class="fab" id="fab"><span>↓</span>소개서 받기</div>
 <div id="pv" hidden><div class="pvin"><div class="pvl"></div><div class="pvr"></div><img id="pvimg" alt="" draggable="false"><img id="pvfaq" alt="" hidden draggable="false"></div></div>
 <div id="md" hidden><div class="mdin"><img id="mdimg" alt="" draggable="false"></div></div>
+<div id="veil"></div>
 <div id="toast" role="status"></div>
 <button class="totop" id="totop" aria-label="맨 위로"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
 
@@ -655,7 +657,7 @@ function layout(vc){if(vc===lastVc)return;lastVc=vc;STOP=Math.round(GH+Math.max(
  stage.style.height=vc+'px';pin.style.height=(vc+PIN)+'px';stage.style.paddingTop=STOP+'px';
  stage.style.background='linear-gradient(180deg,#000f24 0,#000f24 '+(STOP+199)+'px,#f4f4f8 '+(STOP+199)+'px)'}
 function frame(t){var y=scrollY,vh=innerHeight;checkSeen();layout(Math.round(vh/(parseFloat(document.documentElement.style.zoom)||1)));
- var Y=PV?pv.scrollTop:y;gnb.classList.toggle('sc',Y>8);fab.classList.toggle('on',Y>700);totop.classList.toggle('on',Y>700);
+ var Y=y;gnb.classList.toggle('sc',Y>8);fab.classList.toggle('on',Y>700);totop.classList.toggle('on',Y>700);
  var Z=parseFloat(document.documentElement.style.zoom)||1,yc=y/Z,vc=vh/Z;
  // 화면 높이가 낮으면 히어로 내용(배지 ~ 안내 문구, 87~821)을 GNB 아래 기준으로 줄여 첫 화면에 다 넣는다
  var hs=Math.max(0.78,Math.min(1,(vc-87-24)/734));hc.style.transform='scale('+hs+')';
@@ -683,7 +685,7 @@ requestAnimationFrame(frame);
 if(RM)wave(0);
 
 // 맨 위로 버튼, 한영 전환
-totop.addEventListener('click',function(){(PV?pv:window).scrollTo({top:0,behavior:RM?'auto':'smooth'})});
+totop.addEventListener('click',function(){scrollTo({top:0,behavior:RM?'auto':'smooth'})});
 // 한영 전환: GNB와 푸터 상태를 같이 바꿈 (시안이라 화면 문구는 바뀌지 않음)
 document.querySelectorAll('.lang button').forEach(function(b){b.addEventListener('click',function(){act(b.dataset.l==='en'?'p:en':(PV==='en'?'home':''))})});
 // 클릭 연결 (Figma 클릭 이벤트 시나리오 보드 2417:22 기준)
@@ -737,9 +739,9 @@ function act(s){if(!s)return;var k=s.split(':')[0],v=s.slice(k.length+1);if(s!==
  else if(k==='m')modal(v);
  // 시안 페이지에서 소개 페이지로 갈 때는 페이지가 덮고 있는 동안 위치를 옮겨 두고 흐리게 걷어 냄
  // (location.hash='' 는 맨 위로 스크롤되므로 주소만 바꾸고 직접 전환)
- else if(k==='s'&&PV==='en')pv.scrollTo({top:{s5:3207}[v]||0,behavior:RM?'auto':'smooth'});  // 영문 소개 안에서 섹션 이동
- else if(k==='s'){if(PV){H.classList.remove('pvon');void H.offsetHeight;$('#'+v).scrollIntoView();history.pushState(null,'',location.pathname+location.search);route()}else $('#'+v).scrollIntoView({behavior:RM?'auto':'smooth'})}
- else if(s==='home'){if(PV){H.classList.remove('pvon');scrollTo(0,0);location.hash=''}else scrollTo({top:0,behavior:RM?'auto':'smooth'})}
+ else if(k==='s'&&PV==='en')scrollTo({top:({s5:3207}[v]||0)*(parseFloat(H.style.zoom)||1),behavior:RM?'auto':'smooth'});  // 영문 소개 안에서 섹션 이동
+ else if(k==='s'){if(PV){afterMain={bg:'#f4f4f8',go:function(){$('#'+v).scrollIntoView()}};history.pushState(null,'',location.pathname+location.search);route()}else $('#'+v).scrollIntoView({behavior:RM?'auto':'smooth'})}
+ else if(s==='home'){if(PV){afterMain={bg:'#000f24',go:function(){scrollTo(0,0)}};location.hash=''}else scrollTo({top:0,behavior:RM?'auto':'smooth'})}
  else if(s==='res')toggleDd()}
 
 // 창: 소개서 받기 (그림자 여백 64, 40 만큼 안쪽 좌표를 밂)
@@ -790,23 +792,26 @@ var flyhot=hot($('#flyg'),[1041,659,44,44,'p:login']);flyhot.style.pointerEvents
  ['s10',952,233,117,51,'p:login'],['s10',636,311,170,34,'p:contact']].forEach(function(a){hot($('#'+a[0]+' .in'),a.slice(1))});
 FT(0).forEach(function(a){hot($('#ft .in'),a)});
 
-// 페이지 전환
-// 소개 → 페이지: 이미지를 다 받은 뒤 페이지를 흐리게 띄움
-// 페이지 → 페이지: 내용만 흐리게 바꿈. 페이지 → 소개: 페이지를 흐리게 걷어 냄
-var rid=0;
-function route(){var k=location.hash.slice(1),P=PG[k],id=++rid,was=!!PV,src=P&&'img/'+P.img+'.png';closeDd();closeMd();
- if(was&&P)pvin.classList.add('out');if(!P)pv.classList.remove('on');
- Promise.all([P?Promise.all([load(src),load('img/'+P.img+'-l.png'),load('img/'+P.img+'-r.png')]):0,was?later(P?180:280):0]).then(function(){
+// 페이지 전환: 다음 화면 색의 막으로 덮고, 이미지가 준비되면 문서 내용을 바꿔 끼운 뒤 막을 걷음
+// 소개 페이지는 숨기기만 하므로 돌아오면 보던 위치로 돌아감
+var rid=0,mainY=0,afterMain=null,veil=$('#veil'),BG={pricing:'#000f24',en:'#000f24',app:'#f7f8fa',login:'#f7f8fa'};
+function route(){var k=location.hash.slice(1),P=PG[k],id=++rid,src=P&&'img/'+P.img+'.png';closeDd();closeMd();
+ if(!P&&!PV)return setLang('ko');
+ if(P&&!PV)mainY=scrollY;
+ veil.style.background=P?(BG[k]||'#fff'):(afterMain?afterMain.bg:'#fff');veil.classList.add('on');
+ Promise.all([P?Promise.all([load(src),load('img/'+P.img+'-l.png'),load('img/'+P.img+'-r.png')]):0,later(230)]).then(function(){
   if(id!==rid)return;
   [].slice.call(pvin.querySelectorAll('.hot')).forEach(function(e){e.remove()});
-  if(!P){PV=null;pv.hidden=true;H.classList.remove('pvon','app');setLang('ko');return}
-  PV=k;pvimg.src=src;pv.scrollTop=0;
-  ['l','r'].forEach(function(s){var e=$('.pv'+s);e.style.backgroundImage='url(img/'+P.img+'-'+s+'.png)';e.style.backgroundSize=(P.app?1:48)+'px auto'});
-  H.classList.add('pvon');H.classList.toggle('app',!!P.app);setLang(k==='en'?'en':'ko');
-  P.hot.forEach(function(a){hot(pvin,a)});
-  pvfaq.hidden=true;pvfaq.classList.add('out');
-  if(P.faq){pvfaq.style.top=P.faq.y+'px';faq({host:pvin,ov:pvfaq,x:P.faq.x,w:P.faq.w,top:P.faq.y,dy:P.faq.dy,rh:P.faq.rh,img:P.faq.img,q:P.faq.q})}
-  pvin.classList.remove('out');if(pv.hidden){pv.hidden=false;void pv.offsetWidth}pv.classList.add('on')})}
+  if(!P){PV=null;pv.hidden=true;H.classList.remove('pvon','app');setLang('ko');
+   if(afterMain)afterMain.go();else scrollTo(0,mainY);afterMain=null}
+  else{PV=k;pvimg.src=src;
+   ['l','r'].forEach(function(s){var e=$('.pv'+s);e.style.backgroundImage='url(img/'+P.img+'-'+s+'.png)';e.style.backgroundSize=(P.app?1:48)+'px auto'});
+   H.classList.add('pvon');H.classList.toggle('app',!!P.app);setLang(k==='en'?'en':'ko');
+   P.hot.forEach(function(a){hot(pvin,a)});
+   pvfaq.hidden=true;pvfaq.classList.add('out');
+   if(P.faq){pvfaq.style.top=P.faq.y+'px';faq({host:pvin,ov:pvfaq,x:P.faq.x,w:P.faq.w,top:P.faq.y,dy:P.faq.dy,rh:P.faq.rh,img:P.faq.img,q:P.faq.q})}
+   pv.hidden=false;scrollTo(0,0)}
+  later(40).then(function(){if(id===rid)veil.classList.remove('on')})})}
 addEventListener('hashchange',route);route();
 // 첫 화면을 다 띄운 뒤 시안 페이지와 창 이미지를 차례로 미리 받아 둠
 addEventListener('load',function(){later(1500).then(function(){
