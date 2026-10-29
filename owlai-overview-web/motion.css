@@ -151,8 +151,8 @@
  background:radial-gradient(260px circle at var(--x,50%) var(--y,50%),rgba(122,184,255,.16),transparent 65%)}
 .scard:hover::after{opacity:1}
 .mo .fsteps{position:relative}
-.mo .fstep{position:relative;z-index:1;background:#141f37}
-.mo .fstep.hl{background:#0d2a52}
+.mo .fstep{position:relative;z-index:1;background:linear-gradient(rgba(255,255,255,.05),rgba(255,255,255,.05)),#0a192d}
+.mo .fstep.hl{background:linear-gradient(rgba(20,122,242,.16),rgba(20,122,242,.16)),#0a192d}
 .comet{position:absolute;left:0;top:50%;width:160px;height:2px;border-radius:2px;opacity:0;
  background:linear-gradient(90deg,transparent,rgba(122,184,255,.9),#fff);box-shadow:0 0 18px 2px rgba(122,184,255,.6);animation:comet 4.2s cubic-bezier(.45,0,.25,1) infinite}
 @keyframes comet{0%{left:0;opacity:0}8%,88%{opacity:1}100%{left:calc(100% - 160px);opacity:0}}
