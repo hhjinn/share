@@ -452,6 +452,15 @@ h2 em{font-style:normal;color:#004591}
 .faq-list details[open] summary i::before{content:"−"}
 .faq-list details p{margin-top:12px;font-size:16px;line-height:1.5;color:#666978}
 .faq-list details p b{font-weight:600;color:#0f0f1f}
+/* FAQ 펼침: 답 영역이 접혔다 펴지듯 높이가 늘고 글이 살짝 내려오며 나타남. 지원하지 않는 브라우저는 바로 열림 */
+.faq-list{interpolate-size:allow-keywords}
+.faq-list details::details-content{height:0;overflow:hidden;transition:height .45s cubic-bezier(.2,.8,.2,1),content-visibility .45s allow-discrete}
+.faq-list details[open]::details-content{height:auto}
+.faq-list details{transition:background .35s,border-radius .35s,border-color .35s}
+.faq-list details p{opacity:0;transform:translateY(-6px);transition:opacity .35s ease .05s,transform .45s cubic-bezier(.2,.8,.2,1)}
+.faq-list details[open] p{opacity:1;transform:none}
+.faq-list summary i{transition:background .3s,color .3s,transform .35s cubic-bezier(.2,.8,.2,1)}
+.faq-list details[open] summary i{transform:rotate(180deg)}
 
 /* 10 하단 CTA */
 .cta-sec{padding-bottom:112px}
