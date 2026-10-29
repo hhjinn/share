@@ -1,0 +1,151 @@
+/* 모션 (Figma 모션 명세 2393:3, overview-motion 프로토타입 값). html.mo 는 motion.js 가 붙이고, ?motion=0 이면 붙지 않음 */
+@property --ang{syntax:'<angle>';initial-value:0deg;inherits:false}
+@keyframes spin{to{--ang:360deg}}
+@keyframes fadeIn{from{opacity:0}}
+
+/* G1 등장: 아래에서 흐릿하게 올라오며 선명해짐. 제목은 위에서 아래로 드러남 */
+.mo .rv{opacity:0;transform:translateY(36px);filter:blur(14px);
+ transition:opacity 1s cubic-bezier(.2,.7,.2,1),transform 1.2s cubic-bezier(.16,.8,.2,1),filter 1s cubic-bezier(.2,.7,.2,1)}
+.mo .rv.vis{opacity:1;transform:none;filter:none}
+.mo .rv.ttl{clip-path:inset(0 0 100% 0);transition-property:opacity,transform,filter,clip-path;transition-duration:1s,1.2s,1s,1.1s}
+.mo .rv.ttl.vis{clip-path:inset(0 0 -20% 0)}
+
+/* 히어로 켜짐: 빛줄기 깜빡임, 바닥 격자 펼침, 수평선, 빛 피어남, 별빛 */
+.mo .hero .beam.l{animation:beamOn 1.5s linear .1s both,swayL 11s ease-in-out 1.6s infinite alternate}
+.mo .hero .beam.r{animation:beamOn 1.5s linear .25s both,swayR 13s ease-in-out 1.75s infinite alternate}
+@keyframes beamOn{0%{opacity:0}12%{opacity:.95}20%{opacity:.1}32%{opacity:.85}40%{opacity:.25}100%{opacity:.6}}
+@keyframes swayL{from{transform:rotate(-35deg);opacity:.45}to{transform:rotate(-28deg);opacity:.7}}
+@keyframes swayR{from{transform:rotate(35deg);opacity:.45}to{transform:rotate(28deg);opacity:.7}}
+.mo .hero .h-floor{display:none}
+.floor{left:-300px;width:2040px;top:514px;height:411px;perspective:380px;perspective-origin:50% 0;overflow:hidden;
+ -webkit-mask:linear-gradient(180deg,transparent 0,#000 18%,#000 82%,transparent),linear-gradient(90deg,transparent 12%,#000 38%,#000 62%,transparent 88%);-webkit-mask-composite:source-in;
+ mask:linear-gradient(180deg,transparent 0,#000 18%,#000 82%,transparent),linear-gradient(90deg,transparent 12%,#000 38%,#000 62%,transparent 88%);mask-composite:intersect}
+.plane{position:absolute;left:0;right:0;top:0;height:2000px;transform-origin:50% 0;transform:rotateX(76deg);
+ background-image:linear-gradient(to right,rgba(122,184,255,.44) 1px,transparent 1px),linear-gradient(to bottom,rgba(122,184,255,.44) 1px,transparent 1px);background-size:68px 68px;background-position:50% 0;
+ animation:unfold 1.8s cubic-bezier(.2,.8,.2,1) .45s both,flow 2.4s linear infinite}
+@keyframes unfold{from{transform:rotateX(90deg);opacity:0}}
+@keyframes flow{to{background-position:50% 68px}}
+.mo .hero .horizon{animation:fadeIn 1.4s ease .9s both}
+.mo .hero .h-bloom{animation:bloom 2.6s ease-out .7s both,breathe 7s ease-in-out 3.3s infinite alternate}
+@keyframes bloom{0%{opacity:0;transform:scale(.6)}35%{opacity:1;transform:scale(1.05)}100%{opacity:.45;transform:none}}
+@keyframes breathe{from{opacity:.45}to{opacity:.7}}
+.mo .dots i{animation:twinkle var(--t) ease-in-out var(--dl) infinite alternate}
+@keyframes twinkle{from{opacity:var(--a)}to{opacity:calc(var(--a)*.15)}}
+.spot{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .6s;
+ background:radial-gradient(520px circle at var(--mx,50%) var(--my,40%),rgba(122,184,255,.10),transparent 60%)}
+.hero:hover .spot{opacity:1}
+
+/* 헤드라인: 단어마다 크게 흐릿했다가 내려앉으며 한 번 빛남. 강조어는 빛이 흐름 */
+.mo .hero h1 .w{display:inline-block}
+.mo .hero h1 .w.rv{transform:translateY(70px) scale(.9);filter:blur(26px)}
+.mo .hero h1 .w.rv.vis{transform:none;filter:none;animation:land 1.8s ease-out var(--ld,0s) both}
+@keyframes land{0%,30%{text-shadow:0 0 0 rgba(140,191,255,0)}45%{text-shadow:0 0 36px rgba(140,191,255,.95),0 0 80px rgba(20,122,242,.6)}100%{text-shadow:0 0 0 rgba(140,191,255,0)}}
+.mo .hero h1 em{background:linear-gradient(90deg,#80c2ff,#dbedff,#80c2ff) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;animation:shine 5s linear infinite}
+@keyframes shine{to{background-position:-200% 0}}
+
+/* H8 입력창: 등장 뒤 점화, 테두리 빛 회전, 뒤쪽 빛 숨쉬기 */
+.mo .prompt-box{border-color:rgba(255,255,255,.16)}
+.mo .prompt-box::before{content:"";position:absolute;inset:-1px;border-radius:20px;padding:1px;pointer-events:none;opacity:.45;
+ background:conic-gradient(from var(--ang),rgba(20,122,242,.9),rgba(122,184,255,.95),rgba(139,123,255,.9),rgba(62,203,255,.9),rgba(20,122,242,.9));
+ -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:spin 6s linear infinite}
+.mo .prompt.vis .prompt-box{animation:ignite 2s ease-out 1.9s backwards}
+@keyframes ignite{30%{box-shadow:0 0 0 1px rgba(140,191,255,.6),0 0 90px rgba(20,122,242,.7)}}
+.mo .prompt-aura{background:conic-gradient(from var(--ang),#147af2,#7ab8ff,#8b7bff,#3ecbff,#147af2);filter:blur(34px);opacity:0;
+ transition:opacity 1s,transform 1s cubic-bezier(.16,.8,.2,1);animation:spin 7s linear infinite}
+.mo .prompt-aura.on{opacity:.3;animation:spin 7s linear infinite,auraBreathe 4s ease-in-out infinite alternate}
+.mo .prompt-aura.typing{opacity:.55;transform:scale(1.01);animation:spin 7s linear infinite}
+.mo .prompt-aura.sent{animation:spin 7s linear infinite,auraFlash 1.4s cubic-bezier(.2,.7,.2,1)}
+@keyframes auraBreathe{from{opacity:.22}to{opacity:.36}}
+@keyframes auraFlash{0%{opacity:.55}20%{opacity:.8;transform:scale(1.04);filter:blur(34px) brightness(1.3)}100%{opacity:.3}}
+.send.go{animation:ping .7s ease-out}
+@keyframes ping{from{box-shadow:0 0 0 0 rgba(140,191,255,.7)}to{box-shadow:0 0 0 16px rgba(140,191,255,0)}}
+.tag{transition:border-color .5s,box-shadow .5s}
+.tag.lit{border-color:rgba(122,184,255,.6);box-shadow:0 0 18px rgba(122,184,255,.45)}
+.hero-note{transition:opacity .4s}
+.mo .hero-note.rv.hide{opacity:0}
+.typing.ph{color:rgba(255,255,255,.38)}
+
+/* 답변 미리보기 카드 (입력창 아래로 열림) */
+.hans{left:230px;top:202px;width:700px;height:168px;z-index:2;display:flex;gap:20px;padding:20px 22px;border-radius:16px;background:rgba(5,31,61,.94);border:1px solid rgba(255,255,255,.14);
+ box-shadow:0 30px 60px rgba(0,0,0,.35);text-align:left;opacity:0;transform:translateY(-14px);clip-path:inset(0 0 100% 0 round 16px);pointer-events:none;
+ transition:opacity .5s ease,transform .7s cubic-bezier(.16,.8,.2,1),clip-path .7s cubic-bezier(.16,.8,.2,1)}
+.hans.open{opacity:1;transform:none;clip-path:inset(0 0 0 0 round 16px)}
+.hans-l{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+.hans-t{display:flex;gap:8px;font-size:15px;line-height:22px;font-weight:500;color:rgba(255,255,255,.92)}
+.hans-t b{font-size:13px;color:#8cbfff}
+.hans-s{min-height:54px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);font:12px/18px ui-monospace,SFMono-Regular,Consolas,monospace;color:#8cbfff;word-break:break-all}
+.hans-s .caret{display:inline-block;width:1.5px;height:13px;margin-left:2px;vertical-align:-2px}
+.hans-r{display:flex;gap:8px;align-items:center;font-size:12px;color:rgba(255,255,255,.5)}
+.hans-r b{padding:2px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);font-weight:500;color:rgba(255,255,255,.8)}
+.hans-c{width:260px;display:flex;align-items:flex-end;justify-content:space-between;padding:4px 4px 20px}
+.hans-c div{position:relative;width:34px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.hans-c i{width:100%;height:0;border-radius:6px 6px 2px 2px;background:rgba(122,184,255,.28);transition:height .9s cubic-bezier(.16,.8,.2,1)}
+.hans-c i.hi{background:linear-gradient(180deg,#7ab8ff,#147af2);box-shadow:0 0 18px rgba(20,122,242,.6)}
+.hans-c span{position:absolute;bottom:-18px;font-size:11px;color:rgba(255,255,255,.5);white-space:nowrap}
+
+/* S2 답변 화면: 기울어진 채 올라오며 펴짐, 대화가 순서대로 나타남, 떠 있는 카드 둥실 */
+.mo .showcase{perspective:1800px}
+.mo .showcase .app{transform-origin:50% 0;will-change:transform}
+.mo .fcard{will-change:transform}
+.mo .fcard.bob{animation:bob var(--bt,7s) ease-in-out infinite alternate}
+@keyframes bob{from{translate:0 -6px}to{translate:0 8px}}
+.mo .showcase-sec .fcard,.mo .showcase-sec .a-it{opacity:0;filter:blur(8px);scale:.92;transition:opacity .6s ease,scale .8s cubic-bezier(.16,.8,.2,1),filter .6s}
+.mo .showcase-sec .a-it{filter:none;scale:1;translate:0 8px;transition:opacity .45s ease,translate .6s cubic-bezier(.16,.8,.2,1)}
+.mo .showcase-sec .bubble.a-it{translate:0 36px;scale:.9;transform-origin:100% 100%}
+.mo .showcase-sec .show{opacity:1!important;filter:none!important;scale:1!important;translate:none!important}
+.mo .showcase-sec .aw{opacity:0;filter:blur(4px);transition:opacity .35s,filter .35s}
+.mo .showcase-sec .aw.show{opacity:1;filter:none}
+.mo .showcase-sec .bars i{transition:height .6s cubic-bezier(.16,.8,.2,1)}
+.mo .showcase-sec .labels{opacity:0;transition:opacity .4s}
+.mo .showcase-sec .labels.show{opacity:1}
+.mo .ans-head .g.wait{color:#147af2;animation:sdp .8s ease-in-out infinite alternate}
+@keyframes sdp{to{opacity:.2}}
+.mo .fcard.ping{animation:bob var(--bt,7s) ease-in-out infinite alternate,dbping 1.2s ease-in-out 2}
+@keyframes dbping{50%{filter:drop-shadow(0 0 18px rgba(20,122,242,.6))}}
+#waves svg{position:absolute;left:0;top:250px;width:1440px;height:200px;overflow:visible}
+#waves path{fill:none;stroke-width:1}
+
+/* 탭 자동 순환 진행 막대, 패널 바뀜 */
+.ftabs button{position:relative}
+.prog{position:absolute;left:0;right:0;bottom:-3px;height:3px;background:#004591;transform-origin:0 0;animation:prog var(--ms) linear both}
+@keyframes prog{from{transform:scaleX(0)}}
+.mo .jcard,.mo .jleft{animation:fadeUp .5s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}}
+
+/* 카드 들림, 보안 카드 빛, 데이터 흐름 혜성, 화살표 */
+.mo .mcard,.mo .scard,.mo .step{transition:transform .5s cubic-bezier(.16,.8,.2,1)}
+.mo .mcard:hover,.mo .scard:hover,.mo .step:hover{transform:translateY(-4px)}
+.scard{position:relative;overflow:hidden}
+.scard::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .4s;
+ background:radial-gradient(260px circle at var(--x,50%) var(--y,50%),rgba(122,184,255,.16),transparent 65%)}
+.scard:hover::after{opacity:1}
+.mo .fsteps{position:relative}
+.mo .fstep{position:relative;z-index:1;background:#141f37}
+.mo .fstep.hl{background:#0d2a52}
+.comet{position:absolute;left:0;top:50%;width:160px;height:2px;border-radius:2px;opacity:0;
+ background:linear-gradient(90deg,transparent,rgba(122,184,255,.9),#fff);box-shadow:0 0 18px 2px rgba(122,184,255,.6);animation:comet 4.2s cubic-bezier(.45,0,.25,1) infinite}
+@keyframes comet{0%{left:0;opacity:0}8%,88%{opacity:1}100%{left:calc(100% - 160px);opacity:0}}
+.mo .farr{animation:arw 4.2s ease-in-out infinite}
+@keyframes arw{0%,100%{opacity:.5;transform:none}10%{opacity:1;transform:translateX(3px)}25%{opacity:.5;transform:none}}
+
+/* 요금제 링에서 퍼지는 물결, 도는 점 */
+.ripple{left:1120px;top:34px;width:360px;height:360px;border-radius:50%;border:1px solid rgba(0,39,84,.25);animation:ripple 6s cubic-bezier(.2,.6,.3,1) infinite}
+@keyframes ripple{from{transform:scale(1);opacity:.9}to{transform:scale(3.7);opacity:0}}
+.orbit{left:1300px;top:214px;width:0;height:0;animation:orbit 18s linear infinite}
+.orbit i{position:absolute;left:-4px;top:-304px;width:8px;height:8px;border-radius:50%;background:#147af2;box-shadow:0 0 12px #7ab8ff}
+@keyframes orbit{to{transform:rotate(360deg)}}
+
+/* 하단 입력창 테두리를 도는 빛 */
+.mo .cta-input{position:relative}
+.mo .cta-input::before{content:"";position:absolute;inset:-1px;border-radius:18px;padding:1px;pointer-events:none;
+ background:conic-gradient(from var(--ang),transparent 0 65%,rgba(140,191,255,.95) 80%,transparent 90%);
+ -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:spin 5s linear infinite}
+
+/* G5 소개서 버튼은 히어로를 지나면 나타남 */
+.mo .f-brochure{opacity:0;transform:translateY(20px);pointer-events:none;transition:opacity .5s,transform .5s}
+.mo .floats.on .f-brochure{opacity:1;transform:none;pointer-events:auto}
+
+@media (max-width:767px){
+ .hans,.comet{display:none}
+ .mo .prompt-box{position:relative;left:0}
+}
