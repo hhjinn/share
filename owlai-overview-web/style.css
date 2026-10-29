@@ -648,3 +648,59 @@ h2 em{font-style:normal;color:#004591}
 
 
 }
+
+/* 소개서 받기 창 */
+.bro-dlg{width:720px;max-width:calc(100% - 32px);max-height:calc(100% - 32px);margin:auto;padding:0;border:0;border-radius:24px;background:#fff;color:#0f0f1f;box-shadow:0 30px 80px rgba(0,13,38,.25)}
+.bro-dlg::backdrop{background:rgba(15,15,31,.45)}
+.bro-dlg[open]{animation:fadeUp .25s ease}
+.bro-dlg.done{width:610px}
+.bro-form{position:relative;padding:36px 40px}
+.bro-x{position:absolute;right:36px;top:36px;font-size:20px;line-height:1;color:#0f0f1f}
+.bro-form h2{font-size:22px;font-weight:700;line-height:1.5}
+.bro-sub{margin-top:4px;font-size:14px;line-height:1.5;color:#666978}
+.bro-hd{display:flex;justify-content:space-between;align-items:center;margin-top:28px;padding-bottom:12px;border-bottom:2px solid #0f0f1f}
+.bro-hd b{font-size:16px;font-weight:700}
+.bro-hd span,.bro-rows .req::after{font-size:13px;color:#666978}
+.bro-hd span::before,.bro-rows .req::after{content:"";display:inline-block;width:5px;height:5px;margin:0 6px 2px 0;border-radius:50%;background:#147af2}
+.bro-rows .req::after{margin:0 0 2px 6px}
+.bro-rows{display:grid;grid-template-columns:150px 1fr}
+.bro-rows>label{display:flex;align-items:center;padding:0 20px;background:#f4f4f8;border-bottom:1px solid #e3e3eb;font-size:14px;font-weight:500}
+.bro-rows>div{display:flex;align-items:center;gap:8px;padding:8px 20px;border-bottom:1px solid #e3e3eb}
+.bro-rows input,.bro-rows select{width:300px;max-width:100%;height:46px;padding:0 14px;border:1px solid #e3e3eb;border-radius:10px;background:#fff;font:inherit;font-size:14px;color:#0f0f1f;outline:none}
+.bro-rows select{appearance:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23666978' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E") right 14px center/14px no-repeat #fff}
+.bro-rows select:invalid{color:#9499a3}
+.bro-rows input:focus,.bro-rows select:focus{border-color:#4d99ff;box-shadow:0 0 0 3px rgba(77,153,255,.15)}
+.bro-rows ::placeholder{color:#9499a3}
+.bro-tel select,.bro-tel input{width:110px}
+.bro-tel i{font-style:normal;color:#9499a3}
+.bro-agree{margin-top:24px;display:flex;flex-direction:column;gap:12px;padding:20px 24px;border:1px solid #e3e3eb;border-radius:16px;background:#f9fafc;font-size:14px;line-height:1.5}
+.bro-agree label{display:flex;gap:10px;align-items:center;cursor:pointer}
+.bro-agree .all{padding-bottom:14px;border-bottom:1px solid #e3e3eb;font-size:15px;font-weight:600}
+.bro-agree input{width:18px;height:18px;accent-color:#002754}
+.bro-btns{margin-top:24px;display:flex;justify-content:center;gap:12px}
+.bro-btns button,.bro-done .bro-send{height:52px;border-radius:12px;font-size:16px;font-weight:600}
+.bro-cancel{width:140px;border:1px solid #c9ccd4;background:#fff}
+.bro-send{width:180px;background:#002754;color:#fff}
+.bro-done{padding:40px 40px 34px;text-align:center}
+.bro-done[hidden],.bro-form[hidden]{display:none}
+.bro-done i{width:48px;height:48px;margin:0 auto;border-radius:50%;background:#e5f0ff;color:#004591;display:flex;align-items:center;justify-content:center}
+.bro-done h2{margin-top:16px;font-size:22px;font-weight:700;line-height:1.5}
+.bro-done p{margin-top:12px;font-size:15px;line-height:1.5;color:#666978}
+.bro-done div{margin-top:32px}
+.bro-done .bro-send{width:180px}
+@media (max-width:767px){
+  .bro-dlg{width:100%;max-width:100%;max-height:92%;margin:auto 0 0;border-radius:24px 24px 0 0}
+  .bro-dlg[open]{animation:sheetUp .3s ease}
+  .bro-form{padding:32px 20px 24px}
+  .bro-x{right:20px;top:32px}
+  .bro-form h2{font-size:18px}
+  .bro-rows{grid-template-columns:1fr}
+  .bro-rows>label{padding:4px 12px;border:0}
+  .bro-rows>div{padding:6px 0 10px;border:0}
+  .bro-rows input,.bro-rows select{width:100%;height:40px}
+  .bro-tel select,.bro-tel input{flex:1;min-width:0}
+  .bro-agree{padding:16px}
+  .bro-btns{flex-direction:column}
+  .bro-btns button{width:100%}
+}
+@keyframes sheetUp{from{transform:translateY(40px);opacity:0}}

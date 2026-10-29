@@ -31,3 +31,37 @@ document.querySelectorAll('.gnb-menu>a').forEach(a=>a.addEventListener('click',(
 
 // FAQ 는 한 번에 하나만 펼침
 document.querySelectorAll('.faq-list details').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)document.querySelectorAll('.faq-list details').forEach(o=>o!==d&&(o.open=false))}));
+
+// 소개서 받기 창 (data-brochure 버튼, 메일 발송은 화면만)
+const bro=document.createElement('dialog');
+bro.className='bro-dlg';
+const opts=(ph,a)=>`<option value="" disabled selected hidden>${ph}</option>`+a.map(o=>`<option>${o}</option>`).join('');
+bro.innerHTML=`<form class="bro-form">
+  <button type="button" class="bro-x" data-close aria-label="닫기">✕</button>
+  <h2>소개서 받기</h2><p class="bro-sub">입력하신 이메일로 OwlAI 소개서(PDF)를 보내 드립니다.</p>
+  <div class="bro-hd"><b>신청인 정보</b><span>필수 정보</span></div>
+  <div class="bro-rows">
+    <label>성명</label><div><input name="name" placeholder="성명을 입력해 주세요."></div>
+    <label>회사명</label><div><input name="company" placeholder="회사명을 입력해 주세요."></div>
+    <label class="req">이메일</label><div><input name="email" type="email" required placeholder="회사 이메일을 입력해 주세요."></div>
+    <label>휴대폰번호</label><div class="bro-tel"><select name="t1">${['010','011','016','017','018','019'].map(o=>`<option>${o}</option>`).join('')}</select><i>-</i><input name="t2" inputmode="numeric" maxlength="4" aria-label="가운데 번호"><i>-</i><input name="t3" inputmode="numeric" maxlength="4" aria-label="끝 번호"></div>
+    <label>부서명</label><div><input name="dept" placeholder="부서명을 입력해 주세요."></div>
+    <label>직무</label><div><select name="job">${opts('직무를 선택하세요',['경영기획','영업관리','재무','운영','IT, DBA','기타'])}</select></div>
+    <label>직책</label><div><select name="rank">${opts('직책을 선택하세요',['사원','대리','과장','차장','부장','임원','기타'])}</select></div>
+  </div>
+  <div class="bro-agree">
+    <label class="all"><input type="checkbox" data-all>전체 동의하기</label>
+    <label><input type="checkbox" required>[필수] 개인정보 수집 및 이용에 동의합니다.</label>
+    <label><input type="checkbox">[선택] 마케팅 정보 수집 및 이용에 동의합니다.</label>
+  </div>
+  <div class="bro-btns"><button type="button" class="bro-cancel" data-close>취소</button><button class="bro-send">메일 발송</button></div>
+</form>
+<div class="bro-done" hidden><i><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></i><h2>소개서 발송 완료</h2><p>입력하신 이메일로 OwlAI 소개서(PDF)를 보냈습니다.</p><div><button type="button" class="bro-send" data-close>확인</button></div></div>`;
+document.body.append(bro);
+const broForm=bro.querySelector('.bro-form'),broDone=bro.querySelector('.bro-done'),boxes=[...broForm.querySelectorAll('.bro-agree input:not([data-all])')],all=broForm.querySelector('[data-all]');
+all.onchange=()=>boxes.forEach(b=>b.checked=all.checked);
+boxes.forEach(b=>b.onchange=()=>all.checked=boxes.every(x=>x.checked));
+broForm.onsubmit=e=>{e.preventDefault();broForm.hidden=true;broDone.hidden=false;bro.classList.add('done')};
+bro.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>bro.close());
+bro.addEventListener('click',e=>{if(e.target===bro)bro.close()});
+document.addEventListener('click',e=>{const t=e.target.closest('[data-brochure]');if(!t)return;e.preventDefault();broForm.reset();broForm.hidden=false;broDone.hidden=true;bro.classList.remove('done');bro.showModal()});
