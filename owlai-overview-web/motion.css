@@ -3,6 +3,10 @@
 @keyframes spin{to{--ang:360deg}}
 @keyframes fadeIn{from{opacity:0}}
 
+/* 첫 화면 글자와 입력창은 motion.js 가 등장 준비를 마칠 때까지 숨김 (먼저 그려졌다 사라지는 깜빡임 방지) */
+.mo:not(.mo-ready) .hero-body{visibility:hidden;animation:moLate 0s 3s forwards} /* 스크립트가 실패해도 3초 뒤엔 보임 */
+@keyframes moLate{to{visibility:visible}}
+
 /* G1 등장: 아래에서 흐릿하게 올라오며 선명해짐. 제목은 위에서 아래로 드러남 */
 .mo .rv{opacity:0;transform:translateY(36px);filter:blur(14px);
  transition:opacity 1s cubic-bezier(.2,.7,.2,1),transform 1.2s cubic-bezier(.16,.8,.2,1),filter 1s cubic-bezier(.2,.7,.2,1)}

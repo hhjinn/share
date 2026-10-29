@@ -9,7 +9,9 @@ document.documentElement.classList.add('mo');
 // 이미 지나친 요소(앵커 이동, 새로고침 뒤 위치 복원)도 나타나게 함
 const seen = (el, fn) => { const o = new IntersectionObserver(es => { if (es[0].isIntersecting || es[0].boundingClientRect.bottom < 0) { o.disconnect(); fn(); } }, { rootMargin: '0px 0px -8% 0px' }); o.observe(el); };
 function reveal(el, delay) {
-  el.classList.add('rv'); el.style.transitionDelay = delay + 's'; el.style.setProperty('--ld', delay + 's');
+  // 이미 그려진 요소는 숨긴 상태로 바로 바꾼 뒤 지연을 붙임 (안 그러면 사라지는 쪽에 지연이 걸려 처음부터 보임)
+  el.style.transition = 'none'; el.classList.add('rv'); void el.offsetWidth; el.style.transition = '';
+  el.style.transitionDelay = delay + 's'; el.style.setProperty('--ld', delay + 's');
   seen(el, () => { el.classList.add('vis'); setTimeout(() => el.style.transitionDelay = '', 1600 + delay * 1000); });
 }
 
@@ -31,6 +33,7 @@ h1.innerHTML = h1.innerHTML.split(/(<br>|<em>.*?<\/em>|\s+)/).map(p => !p || /^\
 reveal($('.chip-dark'), hd(1)); $$('.w', h1).forEach((w, i) => reveal(w, hd(2 + i))); reveal($('.hero-sub'), hd(8));
 reveal($('.prompt-box'), hd(9)); reveal($('.prompt-back'), hd(10)); reveal($('.hero-note'), hd(14));
 $$('.prompt .tag').forEach((t, i) => { t.style.setProperty('--from', i < 2 ? '-40px' : '40px'); reveal(t, hd(12 + i % 2)); });
+document.documentElement.classList.add('mo-ready');
 
 // 입력창: 질문을 치고 보내면 아래로 답변 카드가 열림 (글자당 60ms, 6.6s 주기)
 const QA = isEn ? [
