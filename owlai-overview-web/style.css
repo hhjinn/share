@@ -507,8 +507,8 @@ h2 em{font-style:normal;color:#004591}
 .f-top{width:49px;height:49px;border-radius:999px;background:#fff;border:1px solid #e3e3eb;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,39,84,.16);opacity:0;pointer-events:none;transition:opacity .2s}
 .f-top.show{opacity:1;pointer-events:auto}
 .has-sub{position:relative}
-.has-sub img{transition:transform .2s}
-.has-sub.open img{transform:rotate(180deg)}
+.sub-btn img{transition:transform .2s}
+.has-sub.open .sub-btn img{transform:rotate(180deg)} /* 화살표만 뒤집음 (메뉴 안 아이콘까지 뒤집히던 것) */
 .sub-menu{position:absolute;left:50%;top:calc(100% + 14px);width:280px;margin-left:-140px;display:none;flex-direction:column;gap:4px;padding:8px;border-radius:14px;background:#fff;box-shadow:0 16px 40px rgba(0,13,38,.28);color:#0f0f1f;line-height:1.5}
 .has-sub.open .sub-menu{display:flex;animation:fadeUp .2s ease}
 .sub-menu a{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px}
