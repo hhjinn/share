@@ -140,7 +140,8 @@ function wave(t) {
   });
 }
 
-// S2-0 고정: 데스크톱에서 답변 화면을 화면 높이 무대로 붙잡고 1000px 동안 유지. 무대 안 내용은 GNB 아래 남은 높이의 가운데
+// S2-0 고정: 데스크톱에서 답변 화면을 화면 높이 무대로 붙잡고 PIN(px) 동안 유지 (명세는 1000, 다 나온 뒤 기다림이 길어 400으로 줄임). 무대 안 내용은 GNB 아래 남은 높이의 가운데
+const PIN = 400;
 const pin = document.createElement('div'); sc.before(pin); pin.append(sc);
 const deco2 = $('.deco', sc), box = $('.prompt-box'), comp = $('.comp-box', app);
 let STOP = 0, lay = '';
@@ -148,7 +149,7 @@ function layout(on, vh) {
   if (lay === on + ':' + vh) return; lay = on + ':' + vh;
   if (!on) { pin.style.height = ''; sc.removeAttribute('style'); deco2.style.top = ''; STOP = 0; return; }
   STOP = Math.round(64 + Math.max(16, (vh - 64 - 700) / 2));
-  pin.style.height = vh + 1000 + 'px'; deco2.style.top = STOP + 'px';
+  pin.style.height = vh + PIN + 'px'; deco2.style.top = STOP + 'px';
   sc.style.cssText = `position:sticky;top:0;height:${vh}px;padding:${STOP}px 0 0;background:linear-gradient(#000f24 0,#000f24 ${STOP + 199}px,#f4f4f8 ${STOP + 199}px)`;
 }
 
@@ -196,7 +197,7 @@ function frame(t) {
   app.style.transform = `translateY(${(1 - e) * 90}px) rotateX(${(1 - e) * 22}deg) scale(${.92 + .08 * e})`; app.style.opacity = .25 + .75 * e;
   cards.forEach(c => c.style.transform = `translateY(${-(r.top - vh * .3) * c.dataset.sp}px)`);
   if (f >= .98 && !played) { played = true; playApp(); } else if (f <= (W ? .01 : 0) && played) { played = false; resetApp(); }
-  if (played && W) advance((y - pinTop) / 1000);
+  if (played && W) advance((y - pinTop) / PIN);
   if (r.top < vh && r.bottom > 0) wave(t);
   floats.classList.toggle('on', y > 700);
   requestAnimationFrame(frame);
