@@ -373,7 +373,7 @@ const DEFAULT_PRICING_CONFIG = {
   },
   csps: [
     { id: 'aws',   name: 'AWS',   allowedDbTypes: 'Tibero',         allowedLicenseTypes: 'BYOL,INCLUDED', active: true },
-    { id: 'azure', name: 'Azure', allowedDbTypes: 'Tibero,OpenSQL', allowedLicenseTypes: 'BYOL',          active: true }
+    { id: 'azure', name: 'Azure', allowedDbTypes: 'Tibero,OpenSQL', allowedLicenseTypes: 'BYOL,INCLUDED', active: true }
   ],
   dbTypes: [
     { id: 'Tibero',  name: 'Tibero',  allowedTopologies: 'Single,TAC', usesRedoVolume: true,  usesArchiveVolume: true,  notice: '' },
@@ -389,7 +389,7 @@ const DEFAULT_PRICING_CONFIG = {
   ],
   licenseTypes: [
     { id: 'BYOL',     name: 'BYOL', chargedPriceKinds: 'owldb_metering', description: '고객 보유 라이선스를 사용하므로 DB 라이선스 비용은 부과하지 않고 OwlDB 미터링(OwlDB Cost)만 부과합니다.', active: true },
-    { id: 'INCLUDED', name: 'LI(라이선스 포함)', chargedPriceKinds: 'db_license,owldb_metering', description: 'DB 라이선스 비용과 OwlDB 미터링 비용을 함께 부과합니다(DBaaS LI Cost). 현재 AWS 에서만 선택할 수 있습니다.', active: true }
+    { id: 'INCLUDED', name: 'LI(라이선스 포함)', chargedPriceKinds: 'db_license,owldb_metering', description: 'DB 라이선스 비용과 OwlDB 미터링 비용을 함께 부과합니다(DBaaS LI Cost).', active: true }
   ],
   topologies: [
     { id: 'Single', name: 'Single', minBaseNodes: 1, maxBaseNodes: 1, allowedEditions: 'SE,EE', redoTopologyFactor: 2, storageMode: 'node',    allowedStorageTypes: '', description: '단일 노드 구성. SE 에디션은 Single 구성만 허용. 노드당 스토리지 1세트', active: true },
@@ -758,7 +758,7 @@ const TABLE_SECTIONS = [
       { key: 'name', label: '표시 이름', type: 'text', required: true } ],
     newRow: () => ({ id: 'ed-' + Date.now(), name: '' }) },
 
-  { key: 'csps', group: '규칙', title: 'CSP 목록', desc: '선택 가능한 CSP 와 CSP 별로 허용하는 DB 유형, 라이선스 유형(쉼표 구분, 비우면 전체)입니다. 예: AWS 는 Tibero 만, Azure 는 BYOL 만 허용.',
+  { key: 'csps', group: '규칙', title: 'CSP 목록', desc: '선택 가능한 CSP 와 CSP 별로 허용하는 DB 유형, 라이선스 유형(쉼표 구분, 비우면 전체)입니다. 예: AWS 는 Tibero 만 허용.',
     columns: [
       { key: 'id', label: 'ID', type: 'text', required: true },
       { key: 'name', label: '표시 이름', type: 'text', required: true },
