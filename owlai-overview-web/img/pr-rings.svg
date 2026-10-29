@@ -1,0 +1,14 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="1000" height="1000" viewBox="0 0 1000 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="bg/rings" clip-path="url(#clip0_0_4)">
+<circle id="Ellipse" cx="500" cy="500" r="179.5" stroke="#002754" stroke-opacity="0.12"/>
+<circle id="Ellipse_2" cx="500" cy="500" r="299.5" stroke="#002754" stroke-opacity="0.102"/>
+<circle id="Ellipse_3" cx="500" cy="500" r="419.5" stroke="#002754" stroke-opacity="0.084"/>
+<circle id="Ellipse_4" cx="500" cy="500" r="539.5" stroke="#002754" stroke-opacity="0.066"/>
+<circle id="Ellipse_5" cx="500" cy="500" r="659.5" stroke="#002754" stroke-opacity="0.048"/>
+</g>
+<defs>
+<clipPath id="clip0_0_4">
+<rect width="1000" height="1000" fill="white"/>
+</clipPath>
+</defs>
+</svg>

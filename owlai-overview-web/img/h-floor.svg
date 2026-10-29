@@ -1,0 +1,52 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="1440" height="411" viewBox="0 0 1440 411" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="bg/floor (&#236;&#155;&#144;&#234;&#183;&#188; &#235;&#176;&#148;&#235;&#139;&#165; &#234;&#178;&#169;&#236;&#158;&#144;)" clip-path="url(#clip0_0_31)">
+<mask id="mask0_0_31" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="1440" height="411">
+<rect id="mask" width="1440" height="411" fill="url(#paint0_radial_0_31)"/>
+</mask>
+<g mask="url(#mask0_0_31)">
+<path id="Vector" d="M-198 0L-4182.12 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_2" d="M-130 0L-3819 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_3" d="M-62 0L-3455.88 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_4" d="M6 0L-3092.76 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_5" d="M74 0L-2729.64 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_6" d="M142 0L-2366.52 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_7" d="M210 0L-2003.4 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_8" d="M278 0L-1640.28 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_9" d="M346 0L-1277.16 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_10" d="M414 0L-914.04 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_11" d="M482 0L-550.92 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_12" d="M550 0L-187.8 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_13" d="M618 0L175.32 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_14" d="M686 0L538.44 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_15" d="M754 0L901.56 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_16" d="M822 0L1264.68 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_17" d="M890 0L1627.8 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_18" d="M958 0L1990.92 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_19" d="M1026 0L2354.04 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_20" d="M1094 0L2717.16 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_21" d="M1162 0L3080.28 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_22" d="M1230 0L3443.4 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_23" d="M1298 0L3806.52 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_24" d="M1366 0L4169.64 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_25" d="M1434 0L4532.76 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_26" d="M1502 0L4895.88 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_27" d="M1570 0L5259 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_28" d="M1638 0L5622.12 411" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_29" d="M-200 0H1640" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_30" d="M-200 20H1640" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_31" d="M-200 50H1640" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_32" d="M-200 103H1640" stroke="#7AB8FF" stroke-opacity="0.44"/>
+<path id="Vector_33" d="M-200 216H1640" stroke="#7AB8FF" stroke-opacity="0.44"/>
+</g>
+</g>
+<defs>
+<radialGradient id="paint0_radial_0_31" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(720 205.5) scale(800 137)">
+<stop/>
+<stop offset="0.45"/>
+<stop offset="1" stop-opacity="0"/>
+</radialGradient>
+<clipPath id="clip0_0_31">
+<rect width="1440" height="411" fill="white"/>
+</clipPath>
+</defs>
+</svg>
