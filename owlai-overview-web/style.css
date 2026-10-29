@@ -741,7 +741,7 @@ h2 em{font-style:normal;color:#004591}
   .cta-sec{padding:88px 0 24px}
   .foot{padding:32px 0}
   /* 스크롤 스냅: 근처에서 멈출 때만 붙는 proximity. 한 화면으로 볼 곳만 지정 (핵심 기능 2화면, 활용 사례, 맨 아래). 첫 화면은 빼서 입력창이 날아가는 장면을 방해하지 않음 */
-  html{scroll-snap-type:y proximity}
+  html:has(.job-sec){scroll-snap-type:y proximity}
   .feat-sec,.job-sec{scroll-snap-align:start}
   .foot{scroll-snap-align:end}
 }
