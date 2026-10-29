@@ -90,7 +90,7 @@ setTimeout(() => cycle(cid), 3200);
 
 // 섹션 등장 (부모 안 순서대로 0.09s 간격, 제목은 위에서 드러남)
 const RV = ['.head>*', '.job-head>.lead', '.db-support', '.steps>*', '.flow', '.ftabs', '.fpanels', '.more-h', '.mcard', '#jobs', '.sec-head-r', '.flowbox', '.scard', '.cmp',
-  '.price-l>*', '.price-btns', '.faq-l>*', '.faq-list details', '.cta>h2', '.cta>p', '.cta-input', '.cta-link', '.foot-top', '.foot-info'];
+  '.price-l>*', '.price-btns', '.plan', '.more-sec .feat>.eyebrow', '.sec2 .sec>.eyebrow', '.faq-l>*', '.faq-list details', '.cta>h2', '.cta>p', '.cta-input', '.cta-link', '.foot-top', '.foot-info'];
 const rvs = $$(RV.join(','));
 rvs.forEach(el => { if (el.matches('h2')) el.classList.add('ttl'); el.classList.add('rv'); });
 rvs.forEach(el => reveal(el, [...el.parentNode.children].filter(c => c.classList.contains('rv')).indexOf(el) * .09));
