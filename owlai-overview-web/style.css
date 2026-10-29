@@ -20,7 +20,7 @@ section{position:relative;overflow:hidden}
 .sub-btn:hover{color:#fff}
 .gnb-right{display:flex;gap:12px;align-items:center}
 .lang{display:flex;gap:2px;padding:3px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);border-radius:999px}
-.lang span{width:30px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.24px;color:rgba(255,255,255,.55);cursor:pointer}
+.lang>*{width:30px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.24px;color:rgba(255,255,255,.55);cursor:pointer}
 .lang .on{background:rgba(255,255,255,.16);color:#fff}
 .btn-ghost{padding:10px 18px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);font-size:14px;font-weight:500;line-height:1.5;color:rgba(255,255,255,.9)}
 .btn-white{padding:10px 18px;border-radius:10px;background:#fff;font-size:14px;font-weight:600;line-height:1.5;color:#002754;box-shadow:0 8px 28px rgba(77,153,255,.3)}
@@ -350,6 +350,8 @@ h2 em{font-style:normal;color:#004591}
 .jbars i.top{background:linear-gradient(90deg,#147af2,#002754)}
 .jbars b{font-weight:500;color:#666978}
 .jbars b.top{font-weight:600;color:#0f0f1f}
+:lang(en) .jbars span{width:88px}
+:lang(en) .jbars i{width:calc(var(--w) * min(380px,100% - 152px))}
 .jtable{flex:1;width:530px;max-width:100%;display:grid;align-content:center}
 .jtable span{padding:9px 0;border-bottom:1px solid #e3e3eb;color:#0f0f1f}
 .jtable .nb{border-bottom:0}
@@ -473,7 +475,7 @@ h2 em{font-style:normal;color:#004591}
 .foot-brand{display:flex;flex-direction:column;align-items:flex-start;gap:14px}
 .foot-brand p{font-size:14px;font-weight:500;line-height:1.5;color:#666978}
 .lang.light{border-color:#e3e3eb;background:#fff}
-.lang.light span{color:#9aa0a6}
+.lang.light>*{color:#9aa0a6}
 .lang.light .on{background:#f4f4f8;color:#0f0f1f}
 .foot-nav{display:flex;gap:64px;font-size:14px;line-height:1.5}
 .foot-nav div{display:flex;flex-direction:column;gap:12px}
@@ -526,6 +528,7 @@ h2 em{font-style:normal;color:#004591}
   .hero-body{padding:70px 20px 0;gap:20px}
   .chip-dark{align-self:stretch}
   .hero h1{font-size:34px;letter-spacing:-.5px}
+  :lang(en) .hero h1{font-size:30px}
   .hero-sub{font-size:17px}
   .hero .fit{display:block}
   .prompt{width:auto;height:auto}

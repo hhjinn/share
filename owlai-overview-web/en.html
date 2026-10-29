@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OwlAI Overview</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- GNB -->
+<header class="gnb">
+  <a href="#" class="gnb-logo"><img src="img/logo-white.png" alt="OwlAI" width="128" height="32"></a>
+  <nav class="gnb-menu">
+    <a href="#features">Features</a>
+    <a href="pricing.html">Pricing</a>
+    <div class="has-sub"><button class="sub-btn">Resources <img src="img/ic-chev.svg" width="14" height="14" alt=""></button>
+      <div class="sub-menu">
+        <a href="#"><i><img src="img/r-book.svg" width="18" alt=""></i><div><b>User manual <small>↗</small></b><span>How to use each feature and connect DBs</span></div></a>
+        <a href="updates.html"><i><img src="img/r-spark.svg" width="18" alt=""></i><div><b>What's new</b><span>New features and changes</span></div></a>
+      </div>
+    </div>
+    <a href="#deploy">On-premises</a>
+  </nav>
+  <div class="gnb-right">
+    <div class="lang"><a href="index.html" lang="ko">KO</a><span class="on">EN</span></div>
+    <a href="contact.html" class="btn-ghost">Contact us</a>
+    <a href="#" class="btn-white">Try OwlAI</a>
+    <button class="gnb-burger" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main>
+<!-- 1 히어로 -->
+<section class="hero">
+  <div class="deco">
+    <img src="img/h-ell1.svg" style="left:40px;top:-480px;width:1360px;height:880px" alt="">
+    <img src="img/h-ell2.svg" style="left:270px;top:420px;width:900px;height:600px" alt="">
+    <i class="beam" style="left:548px;top:-254px;transform:rotate(-32deg)"></i>
+    <i class="beam" style="left:718px;top:-138px;transform:rotate(32deg)"></i>
+    <img src="img/h-bloom.svg" style="left:170px;top:60px;width:1100px;height:560px" alt="">
+    <img src="img/h-floor.svg" style="left:0;top:514px;width:1440px;height:411px" alt="">
+    <img src="img/h-hglow.svg" style="left:380px;top:413px;width:680px;height:200px" alt="">
+    <i class="horizon"></i>
+    <div class="dots" id="heroDots"></div>
+  </div>
+  <div class="hero-body">
+    <div class="chip-dark"><b>✦</b>AI that asks your company databases</div>
+    <h1>Ask your company data<br>in <em>plain language</em></h1>
+    <p class="hero-sub"><b>Connect your databases and documents</b>,<br>then ask and get answers in natural language.</p>
+    <div class="fit" data-w="1160">
+      <div class="prompt">
+        <i class="prompt-back"></i>
+        <i class="prompt-aura"></i>
+        <div class="prompt-box">
+          <div class="prompt-input"><b>✦</b><span class="typing">Compare sales by region for last quarter</span><i class="caret"></i></div>
+          <div class="prompt-bar">
+            <div class="row8"><span class="circle">+</span><span class="pill"><img src="img/ic-research.svg" width="14" height="14" alt="">Deep research</span></div>
+            <div class="row12">
+              <span class="model">standard <em>medium</em> <img src="img/ic-chev2.svg" width="14" height="14" alt=""></span>
+              <img src="img/ic-mic.svg" width="18" height="18" alt="">
+              <span class="send"><img src="img/ic-send.svg" width="18" height="18" alt=""></span>
+            </div>
+          </div>
+        </div>
+        <span class="tag" style="left:0;top:22px"><img src="img/ic-db.svg" width="16" height="16" alt="">Oracle, Tibero</span>
+        <span class="tag" style="left:0;top:166px"><img src="img/ic-db.svg" width="16" height="16" alt="">PostgreSQL, MySQL</span>
+        <span class="tag" style="left:1012px;top:22px"><i class="sq"></i>Charts and tables</span>
+        <span class="tag" style="left:1010px;top:166px"><i class="sq"></i>Shows its SQL</span>
+        <img src="img/h-l1.svg" style="left:144px;top:42px;width:56px;height:28.5px" alt="">
+        <img src="img/h-dot.svg" style="left:196.5px;top:66.5px;width:7px" alt="">
+        <img src="img/h-l2.svg" style="left:183px;top:150px;width:17px;height:37.5px" alt="">
+        <img src="img/h-dot.svg" style="left:196.5px;top:146.5px;width:7px" alt="">
+        <img src="img/h-r1.svg" style="left:960px;top:42px;width:52px;height:28.5px" alt="">
+        <img src="img/h-dot.svg" style="left:956.5px;top:66.5px;width:7px" alt="">
+        <img src="img/h-r2.svg" style="left:960px;top:150px;width:50px;height:37.5px" alt="">
+        <img src="img/h-dot.svg" style="left:956.5px;top:146.5px;width:7px" alt="">
+      </div>
+    </div>
+    <p class="hero-note">You can type a question before signing up. After you log in, OwlAI starts with your question.</p>
+  </div>
+</section>
+
+<!-- 2 답변 화면, 연결 데이터 -->
+<section class="showcase-sec">
+  <div class="deco">
+    <img src="img/s-blob.svg" style="left:130px;top:280px;width:1180px;height:600px" alt="">
+    <div id="waves"></div>
+  </div>
+  <div class="fit" data-w="1440">
+    <div class="showcase">
+      <div class="app">
+        <aside class="app-side">
+          <div class="app-brand"><img src="img/logo.png" width="69" height="17" alt="OwlAI"><span>ENTERPRISE INTELLIGENCE</span></div>
+          <div class="app-nav">
+            <span><img src="img/a-new.svg" alt="">New chat</span>
+            <span><img src="img/a-play.svg" alt="">Playbooks</span>
+            <span><img src="img/a-search.svg" alt="">Search</span>
+            <span><img src="img/a-meet.svg" alt="">Meetings</span>
+          </div>
+          <p class="app-cap">Recent</p>
+          <div class="app-recent"><p>Compare sales by region for last quarter</p><small>Just now</small></div>
+          <div class="app-grow"></div>
+          <div class="app-newbtn">What's new</div>
+          <div class="app-user"><span class="av">H</span><div><p>hong@example.com</p><small>Member</small></div></div>
+        </aside>
+        <div class="app-main">
+          <div class="app-chat">
+            <div class="bubble">Compare sales by region for last quarter</div>
+            <div class="answer">
+              <div class="ans-head"><span><i class="g">●</i>Queried the connected DB (sales)</span><span class="sqlbtn">View SQL</span></div>
+              <p class="ans-text">Compared sales by region. <b>The Capital area is highest</b>, up 12% from last quarter.</p>
+              <div class="chart">
+                <p>Sales by region, Q3 2026 (KRW 100M)</p>
+                <div class="bars"><i style="height:96px" class="hi"></i><i style="height:66.4px"></i><i style="height:50.6px"></i><i style="height:40.4px"></i><i style="height:28.2px"></i></div>
+                <div class="labels"><span>Capital 48.2</span><span>Yeongnam 33.5</span><span>Chungcheong 25.1</span><span>Honam 20.3</span><span>Gangwon 14.0</span></div>
+              </div>
+              <div class="sugg"><span>Show the monthly trend</span><span>Export table to Excel</span><span>Save as playbook</span></div>
+            </div>
+          </div>
+          <div class="app-composer">
+            <div class="comp-box">
+              <p>Ask OwlAI anything</p>
+              <div class="comp-bar">
+                <span class="plus">+</span>
+                <span class="dr"><img src="img/a-research.svg" alt="">Deep research</span>
+                <span class="grow">standard <em>medium</em></span>
+                <img src="img/a-mic.svg" class="mic" alt="">
+                <span class="sendg"><img src="img/a-send.svg" alt=""></span>
+              </div>
+            </div>
+            <p class="disc">OwlAI uses generative AI to write answers and documents. Check important details before use.</p>
+          </div>
+        </div>
+      </div>
+      <div class="fcard sqlcard">
+        <p class="h"><i>●</i>SQL completed (0.8s)</p>
+        <pre>SELECT region, SUM(amount)
+  FROM sales_summary
+ WHERE quarter = '2026Q3'
+ GROUP BY region;</pre>
+      </div>
+      <div class="fcard evid"><span class="ck">✓</span><div><small>Source table</small><b>sales_summary (12,480 rows)</b></div></div>
+      <div class="fcard share"><b>↗</b>Share with a teammate</div>
+      <div class="fcard dbcard">
+        <p>3 connected DBs</p>
+        <div><span class="dbi"><img src="img/ic-db-blue.svg" alt=""></span><b>sales</b><small>Oracle</small><img src="img/dot-green.svg" class="gd" alt=""></div>
+        <div><span class="dbi"><img src="img/ic-db-blue.svg" alt=""></span><b>erp</b><small>Tibero</small><img src="img/dot-green.svg" class="gd" alt=""></div>
+        <div><span class="dbi"><img src="img/ic-db-blue.svg" alt=""></span><b>crm</b><small>PostgreSQL</small><img src="img/dot-green.svg" class="gd" alt=""></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 DB 연결 -->
+<section class="db-sec" id="db">
+  <div class="deco"><i class="grid" style="left:680px;top:0;width:760px;height:520px"></i></div>
+  <div class="wrap">
+    <div class="db-top">
+      <div class="head">
+        <span class="eyebrow"><b>✦</b>Connect DBs</span>
+        <h2><em>Data AI</em> from the company<br>that builds databases</h2>
+        <p class="lead">TmaxTibero <b>connects the data you already use</b>, as it is. <b>Pick tables to analyze</b> and AI reads the structure and writes descriptions. OwlAI <b>only runs read queries</b>, so your data never changes.</p>
+      </div>
+      <div class="db-support">
+        <p class="cap blue">TmaxTibero products</p>
+        <div class="brand-row">
+          <span><img src="img/logo-tibero.png" alt="Tibero"></span>
+          <span><img src="img/logo-opensql.png" alt="OpenSQL"></span>
+          <span><img src="img/logo-owldb.png" alt="OwlDB"></span>
+        </div>
+        <p class="cap gray">Other DBs and files</p>
+        <div class="db-chips">
+          <span><i><img src="img/ic-db-blue.svg" alt=""></i>Oracle</span>
+          <span><i><img src="img/ic-db-blue.svg" alt=""></i>PostgreSQL</span>
+          <span><i><img src="img/ic-db-blue.svg" alt=""></i>MySQL</span>
+          <span><i><img src="img/ic-db-blue.svg" alt=""></i>MariaDB</span>
+          <span><i><img src="img/ic-db-blue.svg" alt=""></i>AWS RDS</span>
+          <span><i><img src="img/ic-db-blue.svg" alt=""></i>Supabase</span>
+          <span class="file"><i><img src="img/ic-file.svg" alt=""></i>Excel, CSV, PDF, Word, HWP</span>
+        </div>
+      </div>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-h"><p><b>01</b>Connect DBs</p><span class="badge">Admin console</span></div>
+        <p class="step-d">Connect a DB in the admin console with a read-only account. Private network DBs connect through an SSH tunnel.</p>
+        <div class="step-ui">
+          <p class="ui-cap">3 connected DBs</p>
+          <div class="row"><span><i class="dbs"><img src="img/ic-db-sm.svg" alt=""></i><b>sales</b><small>Oracle</small></span><span class="ok"><img src="img/dot-green6.svg" alt="">Connected</span></div>
+          <div class="row"><span><i class="dbs"><img src="img/ic-db-sm.svg" alt=""></i><b>erp</b><small>Tibero</small></span><span class="ok"><img src="img/dot-green6.svg" alt="">Connected</span></div>
+          <div class="row"><span><i class="dbs"><img src="img/ic-db-sm.svg" alt=""></i><b>dw</b><small>PostgreSQL</small></span><span class="ok"><img src="img/dot-green6.svg" alt="">Connected</span></div>
+        </div>
+      </div>
+      <span class="step-arrow"><img src="img/ic-arrow.svg" alt=""></span>
+      <div class="step">
+        <div class="step-h"><p><b>02</b>Schema analysis</p><span class="badge">AI analysis</span></div>
+        <p class="step-d">Pick tables and AI reads their structure and data distribution, then writes table descriptions.</p>
+        <div class="step-ui">
+          <div class="row"><span><img src="img/ic-check.svg" width="14" alt="">sales_summary</span><span class="st green">Done</span></div>
+          <div class="row"><span><img src="img/ic-check.svg" width="14" alt="">orders</span><span class="st green">Done</span></div>
+          <div class="row"><span><img src="img/ic-check.svg" width="14" alt="">customers</span><span class="st orange">Analyzing</span></div>
+          <div class="ai-note"><p>AI-written description</p>sales_summary: total sales by region and quarter. amount is in KRW</div>
+        </div>
+      </div>
+      <span class="step-arrow"><img src="img/ic-arrow.svg" alt=""></span>
+      <div class="step">
+        <div class="step-h"><p><b>03</b>Role permissions</p><span class="badge">Permissions</span></div>
+        <p class="step-d">Set which DBs each role can use, and members can only ask about allowed DBs.</p>
+        <div class="step-ui">
+          <p class="role"><small>Role</small>Sales ops team</p>
+          <div class="row"><span>Sales DB</span><span class="st green">Allowed</span></div>
+          <div class="row"><span>Accounting DB</span><span class="st green">Allowed</span></div>
+          <div class="row"><span>HR DB</span><span class="st red">Excluded</span></div>
+          <p class="okline"><i>●</i>Queried allowed DBs only</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 문제와 해결 -->
+<section class="why-sec">
+  <div class="deco">
+    <img src="img/p-dots.svg" style="left:1250px;top:-20px;width:308px;height:220px" alt="">
+    <img src="img/p-blob.svg" style="left:720px;top:-260px;width:840px;height:700px" alt="">
+  </div>
+  <div class="wrap why">
+    <div class="head">
+      <span class="eyebrow"><b>✦</b>Why OwlAI</span>
+      <h2 class="h44">Days of waiting for data,<br>cut down to<br><em>a single question</em></h2>
+      <p class="lead w520">Stop requesting, waiting, and fixing data checks. <b>Ask directly and finish right away</b>. Every result keeps the SQL it ran, so <b>the data team only reviews</b>.</p>
+    </div>
+    <div class="flows">
+      <div class="flow now">
+        <div class="flow-h"><b>Now</b><span>5 steps (days, depending on the data team)</span></div>
+        <div class="flow-c"><span>Request</span><i>→</i><span>Data team checks</span><i>→</i><span>Write SQL</span><i>→</i><span>Clean up in Excel</span><i>→</i><span>Report</span></div>
+      </div>
+      <div class="flow owl">
+        <div class="flow-h"><b>OwlAI</b><span>3 steps (right away)</span></div>
+        <div class="flow-c"><span>Ask</span><i>→</i><span>Run SQL</span><i>→</i><span>Tables, charts, sources</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 핵심 기능 -->
+<section class="feat-sec" id="features">
+  <div class="deco">
+    <img src="img/f-blob.svg" style="left:-360px;top:540px;width:1020px;height:620px" alt="">
+    <i class="grid2" style="left:170px;top:0;width:1100px;height:520px"></i>
+  </div>
+  <div class="feat">
+    <div class="head center">
+      <span class="eyebrow"><b>✦</b>Key features</span>
+      <h2 class="h44">Questions, routine work, and meetings,<br><em>all in one place</em></h2>
+    </div>
+    <div class="ftabs" role="tablist">
+      <button class="on" data-tab="0"><b>Natural language queries</b><small>Ask and check the SQL</small></button>
+      <button data-tab="1"><b>Playbooks</b><small>Automate routine work</small></button>
+      <button data-tab="2"><b>Meetings</b><small>Notes, summaries, to-dos</small></button>
+    </div>
+    <div class="fpanels">
+      <div class="fpanel on">
+        <div class="fp-text">
+          <h3>Ask like you talk,<br>and see the SQL</h3>
+          <p class="fp-lead">Turns your question into SQL, runs it, and shows the results in <b>tables and charts</b>. <b>The SQL it ran and the tables it used</b> are saved with every answer.</p>
+          <ul class="checks"><li>Tables, charts, and SQL on one screen</li><li>Download result tables</li><li>Keep analyzing with follow-up questions</li></ul>
+          <div class="ex"><b>Example</b><p>“Compare sales by region for last quarter” → Run SQL → Bar chart, table, and source table</p></div>
+        </div>
+        <div class="shot shot-app"><div class="fit fit-m"><div id="featApp"></div></div></div>
+      </div>
+      <div class="fpanel">
+        <div class="fp-text">
+          <h3>Set up routine work<br>just once</h3>
+          <p class="fp-lead">Save weekly work as a playbook and it <b>runs again on schedule</b>, keeping each result in the run history.</p>
+          <ul class="checks"><li>Scheduled runs</li><li>Run history and results kept</li><li>Share with your team</li></ul>
+          <div class="ex"><b>Example</b><p>“Make a sales report every Monday” → Runs every Monday at 09:00 → Saved as an Excel report</p></div>
+        </div>
+        <div class="shot"><div class="fit fit-m"><div class="mock pb">
+          <div class="pb-top"><b>Weekly sales report</b><img src="img/pb-close.svg" alt=""></div>
+          <div class="pb-body">
+            <div class="pb-hist">
+              <p class="t">Run history</p>
+              <div class="pb-run"><div><span><b>Weekly sales report</b><i class="s">Success</i></span><small>Just now</small></div><p>Every Monday at 9 AM, totals last week's sales by region and saves an Excel report.</p></div>
+              <div class="pb-run"><div><span><b>Weekly sales report</b><i class="s">Success</i></span><small>2026.10.19 09:00:12</small></div><p>Every Monday at 9 AM, totals last week's sales by region and saves an Excel report.</p></div>
+              <div class="pb-run"><div><span><b>Weekly sales report</b><i class="f">Failed</i></span><small>2026.10.12 09:00:31</small></div><p>Every Monday at 9 AM, totals last week's sales by region and saves an Excel report.</p></div>
+              <div class="pb-run"><div><span><b>Weekly sales report</b><i class="s">Success</i></span><small>2026.10.05 09:00:08</small></div><p>Every Monday at 9 AM, totals last week's sales by region and saves an Excel report.</p></div>
+            </div>
+            <div class="pb-form">
+              <span class="pb-lock"><img src="img/pb-lock.svg" alt="">Turn it off to edit</span>
+              <div class="fld"><p>Model</p><div class="sel">standard<i>▾</i></div></div>
+              <div class="fld"><p>Basic info</p><div class="box"><img src="img/pb-info.svg" alt="">Weekly sales report</div></div>
+              <div class="fld"><p>Trigger</p><div class="box"><img src="img/pb-cal.svg" alt="">Schedule (every Monday 09:00)</div></div>
+              <div class="fld"><p>Tasks</p><div class="box col"><span><i class="gsq"></i>Step 1. Total sales by region<em>Approved</em></span><span><i class="gsq"></i>Step 2. Make an Excel report<em>Approved</em></span></div></div>
+              <div class="pb-btns"><span>Edit</span><span class="g">Run</span><span class="b">Turn off</span></div>
+            </div>
+          </div>
+        </div></div></div>
+      </div>
+      <div class="fpanel">
+        <div class="fp-text">
+          <h3>Every meeting ends<br>with a to-do list</h3>
+          <p class="fp-lead">Record a meeting and OwlAI transcribes it, then writes <b>a summary and to-dos</b>. You can find what was said later in chat.</p>
+          <ul class="checks"><li>Transcripts and summaries</li><li>To-dos with owners</li><li>Search meetings from chat</li></ul>
+          <div class="ex"><b>Example</b><p>32-minute ops meeting recording → 3-line summary → 2 to-dos with owners</p></div>
+        </div>
+        <div class="shot"><div class="fit fit-m"><div class="mock mt">
+          <div class="mt-head"><b>October ops meeting</b><small>Oct 20, 10:00 AM&nbsp;&nbsp;&nbsp;32:15</small></div>
+          <div class="mt-tabs"><span class="on">Minutes</span><span>Transcript<i>46</i></span></div>
+          <div class="mt-body">
+            <div class="mt-bar"><span>AI-written minutes</span><span>standard</span><em>Regenerate</em><span class="sp"></span><img src="img/mt-up.svg" alt=""><img src="img/mt-down.svg" alt=""><img src="img/mt-copy.svg" alt=""><em class="w">Continue in chat</em><em class="w dd">standard medium<i>▾</i></em></div>
+            <div class="mt-doc">
+              <b class="h">Minutes - October ops meeting</b>
+              <p><b>Date</b> 2026-10-20 10:00<br><b>Length</b> 32 min</p>
+              <b class="h2">① Why returns went up</b>
+              <ul><li>Returns rose from last month, so check the cause by product first</li><li>Also check whether shipping delays affected returns</li></ul>
+              <p class="concl"><b>Decision</b> Analyze return causes by product and share at the next meeting</p>
+              <b class="h3">Action items</b>
+              <div class="todo"><span><i></i>Analyze return causes by product (Lee, Friday)</span><span><i></i>Check for shipping delays (Park)</span></div>
+              <b class="h2">② Next month's ops plan</b>
+              <ul><li>Review clearing 10 slow-moving items</li><li>Add return metrics to the weekly sales report playbook</li></ul>
+            </div>
+          </div>
+        </div></div></div>
+      </div>
+    </div>
+    <div class="more">
+      <div class="more-h"><b>You can also</b><a href="#">See all features in the user manual ↗</a></div>
+      <div class="cards3">
+        <div class="mcard"><i><img src="img/ic-f-file.svg" alt=""></i><div><b>Get files</b><p>Get answers as Excel, Word, PowerPoint, or HWP files and fill in company templates.</p></div></div>
+        <div class="mcard"><i><img src="img/ic-f-doc.svg" alt=""></i><div><b>Ask company documents</b><p>Finds the matching parts of policies and manuals and answers with them as sources.</p></div></div>
+        <div class="mcard"><i><img src="img/ic-f-plug.svg" alt=""></i><div><b>Connect work tools</b><p>Connect Notion, Jira, GitHub, and Google Drive and use them in chat.</p></div></div>
+        <div class="mcard"><i><img src="img/ic-f-deep.svg" alt=""></i><div><b>Deep research</b><p>After you approve the research plan, several researchers split the work and write a report.</p></div></div>
+        <div class="mcard"><i><img src="img/ic-f-group.svg" alt=""></i><div><b>Group documents</b><p>Upload team documents and members use them as shared sources.</p></div></div>
+        <div class="mcard"><i><img src="img/ic-f-monitor.svg" alt=""></i><div><b>Desktop app</b><p>Reads files in a folder on your PC and saves results to the same folder.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 직무별 활용 -->
+<section class="job-sec" id="cases">
+  <div class="deco"><img src="img/j-blob.svg" style="left:-160px;top:420px;width:620px;height:420px" alt=""></div>
+  <div class="wrap">
+    <div class="job-head">
+      <div class="head">
+        <span class="eyebrow"><b>✦</b>Use cases</span>
+        <h2 class="h40">How <em>each team</em> uses it</h2>
+      </div>
+      <p class="lead r">We picked <b>common questions</b> for each role.<br>Click a question to see a sample answer.</p>
+    </div>
+    <div id="jobs"></div>
+  </div>
+</section>
+
+<!-- 7 보안과 도입 방식 -->
+<section class="sec-sec" id="deploy">
+  <div class="deco">
+    <i class="grid3" style="left:0;top:0;width:1441px;height:1400px"></i>
+    <img src="img/s-glow.svg" style="left:520px;top:-400px;width:1120px;height:780px" alt="">
+  </div>
+  <div class="wrap sec">
+    <div class="sec-head">
+      <div class="head">
+        <span class="eyebrow dark"><b>✦</b>Security and deployment</span>
+        <h2 class="h40 white">How OwlAI handles<br><em>your company data</em></h2>
+      </div>
+      <div class="sec-head-r">
+        <p class="lead dark">Every question starts with <b>a permission check</b>.<br>OwlAI <b>only runs read queries</b> and <b>logs every step</b>.</p>
+        <div class="sec-cta"><a href="#">Learn about on-premises →</a><a href="contact.html?type=quote" class="btn-w">Contact us</a></div>
+      </div>
+    </div>
+    <div class="flowbox">
+      <p class="fb-t">From question to answer</p>
+      <div class="fsteps">
+        <div class="fstep"><i><img src="img/s-chat.svg" alt=""></i><p><small>01</small>Ask</p><span>A member asks in natural language</span></div>
+        <img class="farr" src="img/s-arrow.svg" alt="">
+        <div class="fstep"><i><img src="img/s-shield.svg" alt=""></i><p><small>02</small>Check permissions</p><span>Uses only DBs allowed for the role</span></div>
+        <img class="farr" src="img/s-arrow.svg" alt="">
+        <div class="fstep"><i><img src="img/s-code.svg" alt=""></i><p><small>03</small>Write SQL</p><span>AI writes a read query</span></div>
+        <img class="farr" src="img/s-arrow.svg" alt="">
+        <div class="fstep hl"><i><img src="img/s-db.svg" alt=""></i><p><small>04</small>Run query</p><span>Runs read-only queries<br>on connected DBs</span></div>
+        <img class="farr" src="img/s-arrow.svg" alt="">
+        <div class="fstep"><i><img src="img/s-chart.svg" alt=""></i><p><small>05</small>Answer</p><span>Shows tables, charts,<br>and the SQL it ran</span></div>
+      </div>
+      <div class="audit"><img src="img/s-log.svg" alt=""><b>Every step goes into the audit log</b><span>Who ran which tool and when, and how many requests were denied for lack of permission.</span></div>
+    </div>
+    <div class="scards">
+      <div class="scard"><i><img src="img/s-layers.svg" alt=""></i><b>Data separated by organization</b><p>Each company's data and chats are <em>stored separately</em>. Other organizations' data can't be queried.</p></div>
+      <div class="scard"><i><img src="img/s-shield2.svg" alt=""></i><b>Data permissions by role</b><p>Admins set <em>which DBs, document collections, and tools</em> each role can use. Members only ask about what they're allowed to see.</p></div>
+      <div class="scard"><i><img src="img/s-eye.svg" alt=""></i><b>Read-only queries</b><p>Questions only run <em>read SQL</em>. OwlAI never edits or deletes data.</p></div>
+      <div class="scard"><i><img src="img/s-key.svg" alt=""></i><b>Connect with a read-only account</b><p>Connect DBs with <em>an account that can only read</em>. Copy the read-only account script right from the setup screen.</p></div>
+      <div class="scard"><i><img src="img/s-log2.svg" alt=""></i><b>Audit logs kept for 3 years</b><p>Logins, permission changes, playbook runs, and tool runs are <em>kept for 3 years</em>.</p></div>
+      <div class="scard"><i><img src="img/s-server.svg" alt=""></i><b>On-premises option</b><p>Install on your servers and <em>use your own model</em>, and questions and query results never leave the company.</p></div>
+    </div>
+    <div class="cmp">
+      <div class="cmp-l"><b>Cloud and on-premises</b><p>The address, operator, and data location depend on how you deploy.</p></div>
+      <div class="cmp-t">
+        <span class="h"></span><span class="h blue">Cloud</span><span class="h">On-premises</span>
+        <span class="k">Address</span><span>owlai.cloud</span><span>Internal company address</span>
+        <span class="k">Operated by</span><span>TmaxTibero</span><span>Your IT team</span>
+        <span class="k">Data location</span><span>OwlAI cloud</span><span>Your servers</span>
+        <span class="k">Updates</span><span>Applied automatically</span><span>Applied on your schedule</span>
+        <span class="k nb">Login</span><span class="nb">Google, Apple, email (2-step verification)</span><span class="nb">Email (2-step verification)</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 요금제 -->
+<section class="price-sec" id="pricing">
+  <div class="deco">
+    <img src="img/pr-blob.svg" style="left:880px;top:-181px;width:660px;height:500px" alt="">
+    <img src="img/pr-rings.svg" style="left:800px;top:-287.5px;width:1000px;height:1000px" alt="">
+  </div>
+  <div class="wrap price">
+    <div class="price-l">
+      <span class="eyebrow"><b>✦</b>Pricing</span>
+      <h2 class="h36">Try <em>free</em> for 1 month,<br>teams at $20 per user/month</h2>
+      <div class="plans"><span><b>Free</b>Personal trial</span><span><b>Team</b>Team collaboration</span><span><b>Enterprise</b>Company-wide</span></div>
+    </div>
+    <div class="price-btns"><a href="contact.html" class="btn-line">Contact us</a><a href="pricing.html" class="btn-navy">See pricing →</a></div>
+  </div>
+</section>
+
+<!-- 9 FAQ -->
+<section class="faq-sec">
+  <div class="wrap faq">
+    <div class="faq-l">
+      <span class="eyebrow"><b>✦</b>FAQ</span>
+      <h2 class="h40">Frequently asked<br><em>questions</em></h2>
+      <p>More questions? Contact us.</p>
+      <a href="contact.html">Contact us →</a>
+    </div>
+    <div class="faq-list">
+      <details open><summary>Which DBs can I connect?<i></i></summary><p>You can connect TmaxTibero's <b>Tibero, OpenSQL, and OwlDB</b>, plus Oracle, PostgreSQL, MySQL, MariaDB, AWS RDS, and Supabase. Questions <b>only run read queries</b>, so your data never changes.</p></details>
+      <details><summary>Can I use it without connecting a DB?<i></i></summary><p>Yes. It answers from web search and the files you upload. Connect a DB and it answers from your company data too.</p></details>
+      <details><summary>How is company data protected?<i></i></summary><p>Each organization's data is kept separate, and each role gets its own allowed DBs and documents. Only read queries run on DBs, and traffic is encrypted with TLS. The SQL the AI ran and the documents it read stay in the activity log admins can see.</p></details>
+      <details><summary>Does company data leave the company?<i></i></summary><p>In the cloud, document excerpts and DB query results used in answers are processed by an external AI provider (OpenAI, US). Service data is stored in the AWS Seoul region. If work data can't leave the company, use your own model on-premises so questions and query results stay inside.</p></details>
+      <details><summary>Can we install it on our own servers?<i></i></summary><p>Yes. The on-premises edition installs OwlAI on your servers. Pick the AI model from open models on your own GPU servers or an external API your company approves. It also runs on air-gapped networks by uploading update files.</p></details>
+      <details><summary>How long does adoption take?<i></i></summary><p>The cloud version works as soon as you sign up. For on-premises, we suggest checking fit with the cloud (2 to 4 weeks), testing on your servers (4 to 8 weeks), then rolling out (2 to 3 months). Timelines are examples and vary by scale.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- 10 하단 CTA -->
+<section class="cta-sec">
+  <div class="wrap">
+    <div class="cta">
+      <div class="cta-deco">
+        <i class="grid4"></i>
+        <img src="img/c-dots.svg" style="left:1000px;top:286px;width:144px" alt="">
+        <img src="img/c-dots.svg" style="left:60px;top:40px;width:144px" alt="">
+        <img src="img/c-ell1.svg" style="left:40px;top:-380px;width:1120px;height:700px" alt="">
+        <img src="img/c-ell2.svg" style="left:-240px;top:120px;width:780px;height:540px" alt="">
+        <img src="img/c-ell3.svg" style="left:760px;top:160px;width:780px;height:540px" alt="">
+      </div>
+      <h2 class="h44 white">Ask <em>a question</em> now</h2>
+      <p class="cta-sub">New sign-ups get 1 month of free trial credits. Your question stays in the input box after you log in.</p>
+      <form class="cta-input" onsubmit="return false"><b>✦</b><input value="Show this month's new customer trend" aria-label="Question"><button>Ask&nbsp;&nbsp;↑</button></form>
+      <a href="contact.html" class="cta-link">Evaluating? Contact us →</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- 푸터 -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <img src="img/logo.png" width="120" height="30" alt="OwlAI">
+        <p>Ask your company data in plain language</p>
+        <div class="lang light"><a href="index.html" lang="ko">KO</a><span class="on">EN</span></div>
+      </div>
+      <nav class="foot-nav">
+        <div><b>Product</b><a href="#features">Features</a><a href="pricing.html">Pricing</a><a href="#deploy">On-premises</a><a href="#">Download</a></div>
+        <div><b>Resources</b><a href="#">User manual ↗</a><a href="updates.html">What's new</a></div>
+        <div><b>Company</b><a href="#">About us ↗</a><a href="contact.html">Contact us</a></div>
+        <div><b>Policies</b><a href="#">Terms of service</a><a href="#">Privacy policy</a></div>
+      </nav>
+    </div>
+    <div class="foot-info">
+      <dl><div><dt>Company</dt><dd>TmaxTibero Co., Ltd.</dd></div><div><dt>CEO</dt><dd>박경희</dd></div><div><dt>Business registration no.</dt><dd>306-86-01745</dd></div><div><dt>Address</dt><dd>TmaxSoft Tower, 45 Jeongja-il-ro, Bundang-gu, Seongnam-si, Gyeonggi-do</dd></div></dl>
+      <p>Copyright (c) 2026. TmaxTibero. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<div class="floats">
+  <a href="#" class="f-brochure" data-brochure><b>↓</b>Get brochure</a>
+  <a href="#" class="f-top" aria-label="Back to top"><img src="img/arrow-up.svg" width="18" height="18" alt=""></a>
+</div>
+
+<script src="jobs-en.js"></script>
+<script src="jobs.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

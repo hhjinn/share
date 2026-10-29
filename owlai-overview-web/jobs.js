@@ -2,7 +2,11 @@
 // 표 셀 앞의 !r 은 빨간 강조, !b 는 파란 강조
 const CODE = ['code', '실행한 SQL'];
 const DOWN = ['down', '표 다운로드'];
-const JOBS = [
+const EN = typeof JOBS_EN !== 'undefined';
+const T = EN ? JOBS_EN.t : { common: '자주 하는 질문', data: '연결한 데이터', start: '이 질문으로 시작하기 →', fu: '이어서 물어보기',
+  lines: ['A 사업부', 'B 사업부', 'C 사업부'],
+  plan: "조건을 ORDER_DATE &gt;= DATE '2026-09-01' AND ORDER_DATE &lt; DATE '2026-10-01'로 바꾸면 IX_ORDERS_DATE 인덱스를 씁니다." };
+const JOBS = EN ? JOBS_EN.jobs : [
   {
     name: '영업관리', title: '지역과 지점별 실적을<br>바로 비교합니다', desc: '매출 DB와 목표 파일을 함께 보고 실적이 낮은 지점을 찾습니다.',
     data: [['db', '영업 DB (Tibero)'], ['file', '지점별 목표.xlsx']],
@@ -109,9 +113,9 @@ function visual(v) {
       return `<span class="${cls}">${c.replace(/^!\w/, '')}</span>`;
     }).join('')).join('')}</div>`;
   } else if (v.type === 'line') {
-    body = `<div class="jline"><img src="img/j-line.svg" alt=""><div class="xs"><span>25.3Q</span><span>25.4Q</span><span>26.1Q</span><span>26.2Q</span><span>26.3Q</span></div><div class="lg"><span>${ic('dot-a', 8)}A 사업부</span><span>${ic('dot-b', 8)}B 사업부</span><span>${ic('dot-c', 8)}C 사업부</span></div></div>`;
+    body = `<div class="jline"><img src="img/j-line.svg" alt=""><div class="xs"><span>25.3Q</span><span>25.4Q</span><span>26.1Q</span><span>26.2Q</span><span>26.3Q</span></div><div class="lg">${['a', 'b', 'c'].map((k, i) => `<span>${ic('dot-' + k, 8)}${T.lines[i]}</span>`).join('')}</div></div>`;
   } else if (v.type === 'plan') {
-    body = `<div class="jplan"><pre><span>SELECT STATEMENT</span><span>  HASH GROUP BY</span><span class="hot">    TABLE ACCESS FULL  ORDERS   (12,480,000 rows)</span><span class="flt">      filter: TO_CHAR(ORDER_DATE, 'YYYYMM') = '202609'</span></pre><p>${ic('spark')}<span>조건을 ORDER_DATE &gt;= DATE '2026-09-01' AND ORDER_DATE &lt; DATE '2026-10-01'로 바꾸면 IX_ORDERS_DATE 인덱스를 씁니다.</span></p></div>`;
+    body = `<div class="jplan"><pre><span>SELECT STATEMENT</span><span>  HASH GROUP BY</span><span class="hot">    TABLE ACCESS FULL  ORDERS   (12,480,000 rows)</span><span class="flt">      filter: TO_CHAR(ORDER_DATE, 'YYYYMM') = '202609'</span></pre><p>${ic('spark')}<span>${T.plan}</span></p></div>`;
   }
   return `<div class="jvis"><p class="vt">${v.title}</p>${body}</div>`;
 }
@@ -121,7 +125,7 @@ function answer(q) {
     <div class="jans"><img src="img/favicon.svg" width="28" height="28" alt="OwlAI">
       <div><p class="jat">${q.a}</p>${visual(q.vis)}
         <div class="jchips">${q.chips.map(([i, t]) => `<span>${ic(i)}${t}</span>`).join('')}</div></div></div>
-    <div class="jfu"><b>이어서 물어보기</b>${q.fu.map(t => `<span>${t}</span>`).join('')}</div>`;
+    <div class="jfu"><b>${T.fu}</b>${q.fu.map(t => `<span>${t}</span>`).join('')}</div>`;
 }
 
 const jobsEl = document.getElementById('jobs');
@@ -133,11 +137,11 @@ function showJob(ji, qi = 0) {
   jobsEl.querySelectorAll('[data-job]').forEach(b => b.classList.toggle('on', b.dataset.job == ji));
   panel.innerHTML = `<div class="jleft">
       <p class="jname">${j.name}</p><h3>${j.title}</h3><p class="jdesc">${j.desc}</p>
-      <p class="jcap">자주 하는 질문</p>
+      <p class="jcap">${T.common}</p>
       <div class="jqs">${j.qs.map((q, i) => `<button class="${i === qi ? 'on' : ''}" data-q="${i}"><span>“${q.q}”</span>${ic(i === qi ? 'arrow-on' : 'arrow', 16)}</button>`).join('')}</div>
-      <p class="jcap">연결한 데이터</p>
+      <p class="jcap">${T.data}</p>
       <div class="jdata">${j.data.map(([i, t]) => `<span>${ic(i)}${t}</span>`).join('')}</div>
-      <a href="#" class="jstart">이 질문으로 시작하기 →</a>
+      <a href="#" class="jstart">${T.start}</a>
     </div>
     <div class="jcard">${answer(j.qs[qi])}</div>`;
   panel.querySelectorAll('[data-q]').forEach(b => b.onclick = () => showJob(ji, +b.dataset.q));
