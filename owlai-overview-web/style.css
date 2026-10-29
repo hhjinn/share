@@ -728,4 +728,11 @@ h2 em{font-style:normal;color:#004591}
   .jtable span{padding:6px 0}
   .jfu{padding-top:14px}
   .jline>img{height:116px}
+  /* 맨 아래 화면: 하단 CTA와 푸터가 GNB 아래 한 화면에 들어가게 (CTA 위가 GNB에 가리지 않음) */
+  .cta-sec{padding:88px 0 24px}
+  .foot{padding:32px 0}
+  /* 스크롤 스냅: 근처에서 멈출 때만 붙는 proximity. 한 화면으로 볼 곳만 지정 (핵심 기능 2화면, 활용 사례, 맨 아래). 첫 화면은 빼서 입력창이 날아가는 장면을 방해하지 않음 */
+  html{scroll-snap-type:y proximity}
+  .feat-sec,.job-sec{scroll-snap-align:start}
+  .foot{scroll-snap-align:end}
 }
