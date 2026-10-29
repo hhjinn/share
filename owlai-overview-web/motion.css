@@ -48,7 +48,34 @@
 .mo .prompt-box::before{content:"";position:absolute;inset:-1px;border-radius:20px;padding:1px;pointer-events:none;opacity:.45;
  background:conic-gradient(from var(--ang),rgba(20,122,242,.9),rgba(122,184,255,.95),rgba(139,123,255,.9),rgba(62,203,255,.9),rgba(20,122,242,.9));
  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:spin 6s linear infinite}
-.mo .prompt.vis .prompt-box{animation:ignite 2s ease-out 1.9s backwards}
+.mo .prompt-box.rv:not(.vis){transform:translateY(70px) scale(.94)}
+.mo .prompt-box.vis{animation:ignite 2s ease-out 1.9s backwards}
+.mo .tag.rv:not(.vis){transform:translateX(var(--from))}
+.mo .prompt-aura.off{opacity:0!important;animation:none!important}
+.shock{left:620px;top:230px;width:200px;height:200px;border-radius:50%;border:1px solid rgba(140,191,255,.7);pointer-events:none;
+ box-shadow:0 0 30px rgba(122,184,255,.5),inset 0 0 30px rgba(122,184,255,.3);opacity:0;animation:shock 1.8s cubic-bezier(.15,.7,.3,1) .5s both}
+@keyframes shock{0%{transform:scale(.1);opacity:0}15%{opacity:1}100%{transform:scale(7);opacity:0}}
+.mo .drift1{animation:drift1 16s ease-in-out infinite alternate}
+.mo .drift2{animation:drift2 19s ease-in-out infinite alternate}
+.mo .hero .drift1{animation:fadeIn 1.8s ease .4s both,drift1 16s ease-in-out infinite alternate}
+.mo .hero .drift2{animation:fadeIn 1.8s ease .6s both,drift2 19s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate(90px,40px) scale(1.08)}}
+@keyframes drift2{to{transform:translate(-110px,-30px) scale(1.12)}}
+/* 입력창 양옆 연결선과 데이터 흐름 */
+.mo .prompt>img{display:none}
+.wires{left:0;top:0;overflow:visible;pointer-events:none}
+.wires path{fill:none;stroke:rgba(255,255,255,.28);stroke-width:1;stroke-dasharray:120;stroke-dashoffset:120;transition:stroke-dashoffset 1s ease .2s}
+.wires.on path{stroke-dashoffset:0}
+.wires circle{fill:#8cbfff;opacity:0;transition:opacity .4s ease 1s}
+.wires.on circle{opacity:1}
+.pulse{left:0;top:0;width:28px;height:2px;border-radius:2px;opacity:0;background:linear-gradient(90deg,transparent,#8cbfff,#fff);box-shadow:0 0 10px #7ab8ff;offset-rotate:auto}
+.pulse.run{animation:travel .9s cubic-bezier(.5,0,.3,1) forwards}
+@keyframes travel{0%{offset-distance:0%;opacity:0}15%,85%{opacity:1}100%{offset-distance:100%;opacity:0}}
+/* 날아가는 입력창 (문서 좌표, GNB 아래) */
+.fly{position:absolute;z-index:45;pointer-events:none}
+.fly .prompt-box{position:relative;left:0;top:0;overflow:hidden;display:flex;flex-direction:column;gap:14px}
+.fly .prompt-box::before{opacity:calc(.45 * (1 - var(--m,0)))}
+.fly .prompt-input{flex:none}
 @keyframes ignite{30%{box-shadow:0 0 0 1px rgba(140,191,255,.6),0 0 90px rgba(20,122,242,.7)}}
 .mo .prompt-aura{background:conic-gradient(from var(--ang),#147af2,#7ab8ff,#8b7bff,#3ecbff,#147af2);filter:blur(34px);opacity:0;
  transition:opacity 1s,transform 1s cubic-bezier(.16,.8,.2,1);animation:spin 7s linear infinite}
@@ -102,14 +129,14 @@
 @keyframes sdp{to{opacity:.2}}
 .mo .fcard.ping{animation:bob var(--bt,7s) ease-in-out infinite alternate,dbping 1.2s ease-in-out 2}
 @keyframes dbping{50%{filter:drop-shadow(0 0 18px rgba(20,122,242,.6))}}
-#waves svg{position:absolute;left:0;top:250px;width:1440px;height:200px;overflow:visible}
+#waves svg{position:absolute;left:720px;top:250px;width:max(1440px,100vw);transform:translateX(-50%);height:200px;overflow:visible}
 #waves path{fill:none;stroke-width:1}
 
 /* 탭 자동 순환 진행 막대, 패널 바뀜 */
 .ftabs button{position:relative}
 .prog{position:absolute;left:0;right:0;bottom:-3px;height:3px;background:#004591;transform-origin:0 0;animation:prog var(--ms) linear both}
 @keyframes prog{from{transform:scaleX(0)}}
-.mo .jcard,.mo .jleft{animation:fadeUp .5s ease}
+.mo .jcard>*{animation:fadeUp .5s ease}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}}
 
 /* 카드 들림, 보안 카드 빛, 데이터 흐름 혜성, 화살표 */
@@ -146,6 +173,6 @@
 .mo .floats.on .f-brochure{opacity:1;transform:none;pointer-events:auto}
 
 @media (max-width:767px){
- .hans,.comet{display:none}
+ .hans,.comet,.wires,.pulse{display:none}
  .mo .prompt-box{position:relative;left:0}
 }
