@@ -15,7 +15,7 @@ section{position:relative;overflow:hidden}
 .gnb{position:fixed;inset:0 0 auto;z-index:50;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;transition:background .25s,box-shadow .25s}
 .gnb.scrolled{background:rgba(0,15,36,.86);backdrop-filter:blur(14px);box-shadow:0 1px 0 rgba(255,255,255,.06)}
 .gnb-menu{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:36px;font-size:15px;line-height:1.5;color:rgba(255,255,255,.72)}
-.gnb-menu a:hover{color:#fff}
+.gnb-menu>a:hover,.sub-btn:hover{color:#fff} /* 리소스 드롭다운 안 링크는 흰 바탕이라 제외 */
 .sub-btn{display:flex;gap:4px;align-items:center;font-size:15px;line-height:1.5;color:inherit}
 .sub-btn:hover{color:#fff}
 .gnb-right{display:flex;gap:12px;align-items:center}
@@ -512,7 +512,7 @@ h2 em{font-style:normal;color:#004591}
 .sub-menu{position:absolute;left:50%;top:calc(100% + 14px);width:280px;margin-left:-140px;display:none;flex-direction:column;gap:4px;padding:8px;border-radius:14px;background:#fff;box-shadow:0 16px 40px rgba(0,13,38,.28);color:#0f0f1f;line-height:1.5}
 .has-sub.open .sub-menu{display:flex;animation:fadeUp .2s ease}
 .sub-menu a{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px}
-.sub-menu a:hover{background:#f4f6f9}
+.sub-menu a:hover{background:#f4f6f9;color:#0f0f1f}
 .sub-menu i{width:36px;height:36px;flex:none;border-radius:10px;background:#e5f0ff;display:flex;align-items:center;justify-content:center}
 .sub-menu b{display:flex;gap:6px;font-size:14px;font-weight:600}
 .sub-menu b small{font-size:13px;font-weight:500;color:#9499a3}
@@ -532,7 +532,7 @@ h2 em{font-style:normal;color:#004591}
   .gnb.menu-open .gnb-menu{display:flex;position:absolute;left:0;right:0;top:64px;transform:none;flex-direction:column;gap:0;padding:8px 20px 20px;background:#000f24;border-top:1px solid rgba(255,255,255,.08)}
   .gnb.menu-open .gnb-menu>a,.gnb.menu-open .sub-btn{padding:14px 0;font-size:16px}
   .sub-menu{position:static;margin:0 0 8px;width:auto;box-shadow:none;background:rgba(255,255,255,.06);color:#fff}
-  .sub-menu a:hover{background:rgba(255,255,255,.06)}
+  .sub-menu a:hover{background:rgba(255,255,255,.06);color:#fff}
   .sub-menu span{color:rgba(255,255,255,.6)}
   .gnb-right{gap:20px}
   .hero{padding-bottom:40px}
@@ -668,7 +668,7 @@ h2 em{font-style:normal;color:#004591}
 .bro-dlg{width:720px;max-width:calc(100% - 32px);max-height:calc(100% - 32px);margin:auto;padding:0;border:0;border-radius:24px;background:#fff;color:#0f0f1f;box-shadow:0 30px 80px rgba(0,13,38,.25)}
 .bro-dlg::backdrop{background:rgba(15,15,31,.45)}
 .bro-dlg[open]{animation:fadeUp .25s ease}
-.bro-dlg.done{width:610px}
+.bro-dlg.sent{width:610px}
 .bro-form{position:relative;padding:36px 40px}
 .bro-x{position:absolute;right:36px;top:36px;font-size:20px;line-height:1;color:#0f0f1f}
 .bro-form h2{font-size:22px;font-weight:700;line-height:1.5}

@@ -62,14 +62,14 @@ document.body.append(bro);
 const broForm=bro.querySelector('.bro-form'),broDone=bro.querySelector('.bro-done'),boxes=[...broForm.querySelectorAll('.bro-agree input:not([data-all])')],all=broForm.querySelector('[data-all]');
 all.onchange=()=>boxes.forEach(b=>b.checked=all.checked);
 boxes.forEach(b=>b.onchange=()=>all.checked=boxes.every(x=>x.checked));
-broForm.onsubmit=e=>{e.preventDefault();broForm.hidden=true;broDone.hidden=false;bro.classList.add('done')};
+broForm.onsubmit=e=>{e.preventDefault();broForm.hidden=true;broDone.hidden=false;bro.classList.add('sent')};
 bro.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>bro.close());
 bro.addEventListener('click',e=>{if(e.target===bro)bro.close()});
-document.addEventListener('click',e=>{const t=e.target.closest('[data-brochure]');if(!t)return;e.preventDefault();broForm.reset();broForm.hidden=false;broDone.hidden=true;bro.classList.remove('done');bro.showModal()});
+document.addEventListener('click',e=>{const t=e.target.closest('[data-brochure]');if(!t)return;e.preventDefault();broForm.reset();broForm.hidden=false;broDone.hidden=true;bro.classList.remove('sent');bro.showModal()});
 
 // 구축형 소개 페이지 준비 중 창 (data-soon 링크). 소개서 완료 창 모양을 같이 씀
 const soon=document.createElement('dialog');
-soon.className='bro-dlg done';
+soon.className='bro-dlg sent'; // 'done' 은 도입 문의 페이지의 보낸 뒤 화면 클래스와 겹쳐 닫혀도 보였음
 soon.innerHTML=`<div class="bro-done"><i><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i><h2>${t('준비 중입니다','Coming soon')}</h2><p>${t('구축형 소개 페이지를 준비하고 있습니다.','The on-premises page is in the works.')}</p><div><button type="button" class="bro-send" data-close>${t('확인','OK')}</button></div></div>`;
 document.body.append(soon);
 soon.querySelector('[data-close]').onclick=()=>soon.close();
