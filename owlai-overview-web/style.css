@@ -478,7 +478,9 @@ h2 em{font-style:normal;color:#004591}
 .cta-link{font-size:15px;font-weight:500;line-height:1.5;color:#b2d4ff}
 
 /* 푸터 */
-.foot{padding:64px 0;border-top:1px solid #e3e3eb;background:#fff}
+.foot{padding:0 0 64px;background:#fff}
+/* 푸터 위 선을 아래 저작권 위 선과 같은 길이(내용 폭)로 */
+.foot>.wrap{padding-top:64px;border-top:1px solid #e3e3eb}
 .foot .wrap{display:flex;flex-direction:column;gap:40px}
 .foot-top{display:flex;justify-content:space-between;align-items:flex-start}
 .foot-brand{display:flex;flex-direction:column;align-items:flex-start;gap:14px}
@@ -491,7 +493,7 @@ h2 em{font-style:normal;color:#004591}
 .foot-nav b{font-weight:700}
 .foot-nav a{color:#666978}
 .foot-nav a:hover{color:#0f0f1f}
-.foot-info{display:flex;flex-direction:column;gap:16px;padding-top:28px;border-top:1px solid #e5e8ed;font-size:13px;line-height:1.5}
+.foot-info{display:flex;flex-direction:column;gap:16px;padding-top:28px;border-top:1px solid #e3e3eb;font-size:13px;line-height:1.5}
 .foot-info dl{display:flex;flex-wrap:wrap;gap:8px 32px}
 .foot-info dl div{display:flex;gap:10px}
 .foot-info dt{font-weight:500;color:rgba(15,15,31,.75)}
@@ -648,7 +650,8 @@ h2 em{font-style:normal;color:#004591}
   .cta-input{flex-wrap:wrap;padding:12px 12px 12px 16px}
   .cta-input input{font-size:15px}
   .cta-input button{width:100%}
-  .foot{padding:32px 0}
+  .foot{padding:0 0 32px}
+  .foot>.wrap{padding-top:32px}
   .foot .wrap{gap:24px}
   .foot-top{flex-direction:column;gap:28px}
   .foot-nav{display:grid;grid-template-columns:1fr 1fr;gap:24px}
@@ -739,7 +742,8 @@ h2 em{font-style:normal;color:#004591}
   .jline>img{height:116px}
   /* 맨 아래 화면: 하단 CTA와 푸터가 GNB 아래 한 화면에 들어가게 (CTA 위가 GNB에 가리지 않음) */
   .cta-sec{padding:88px 0 24px}
-  .foot{padding:32px 0}
+  .foot{padding:0 0 32px}
+  .foot>.wrap{padding-top:32px}
   /* 스크롤 스냅: 근처에서 멈출 때만 붙는 proximity. 한 화면으로 볼 곳만 지정 (핵심 기능 2화면, 활용 사례, 맨 아래). 첫 화면은 빼서 입력창이 날아가는 장면을 방해하지 않음 */
   html:has(.job-sec){scroll-snap-type:y proximity}
   .feat-sec,.job-sec{scroll-snap-align:start}

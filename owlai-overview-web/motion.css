@@ -26,9 +26,9 @@
  mask:linear-gradient(180deg,transparent 0,#000 18%,#000 82%,transparent),linear-gradient(90deg,transparent 12%,#000 38%,#000 62%,transparent 88%);mask-composite:intersect}
 .plane{position:absolute;left:0;right:0;top:0;height:2000px;transform-origin:50% 0;transform:rotateX(76deg);
  background-image:linear-gradient(to right,rgba(122,184,255,.44) 1px,transparent 1px),linear-gradient(to bottom,rgba(122,184,255,.44) 1px,transparent 1px);background-size:68px 68px;background-position:50% 0;
- animation:unfold 1.8s cubic-bezier(.2,.8,.2,1) .45s both,flow 2.4s linear infinite}
+ will-change:transform;animation:unfold 1.8s cubic-bezier(.2,.8,.2,1) .45s both,flow 2.4s linear 2.25s infinite}
 @keyframes unfold{from{transform:rotateX(90deg);opacity:0}}
-@keyframes flow{to{background-position:50% 68px}}
+@keyframes flow{from{transform:rotateX(76deg)}to{transform:rotateX(76deg) translateY(68px)}}
 .mo .hero .horizon{animation:fadeIn 1.4s ease .9s both}
 .mo .hero .h-bloom{animation:bloom 2.6s ease-out .7s both,breathe 7s ease-in-out 3.3s infinite alternate}
 @keyframes bloom{0%{opacity:0;transform:scale(.6)}35%{opacity:1;transform:scale(1.05)}100%{opacity:.45;transform:none}}
@@ -81,13 +81,13 @@
 .fly .prompt-box::before{opacity:calc(.45 * (1 - var(--m,0)))}
 .fly .prompt-input{flex:none}
 @keyframes ignite{30%{box-shadow:0 0 0 1px rgba(140,191,255,.6),0 0 90px rgba(20,122,242,.7)}}
-.mo .prompt-aura{background:conic-gradient(from var(--ang),#147af2,#7ab8ff,#8b7bff,#3ecbff,#147af2);filter:blur(34px);opacity:0;
- transition:opacity 1s,transform 1s cubic-bezier(.16,.8,.2,1);animation:spin 7s linear infinite}
-.mo .prompt-aura.on{opacity:.3;animation:spin 7s linear infinite,auraBreathe 4s ease-in-out infinite alternate}
-.mo .prompt-aura.typing{opacity:.55;transform:scale(1.01);animation:spin 7s linear infinite}
-.mo .prompt-aura.sent{animation:spin 7s linear infinite,auraFlash 1.4s cubic-bezier(.2,.7,.2,1)}
+.mo .prompt-aura{background:conic-gradient(from 90deg,#147af2,#7ab8ff,#8b7bff,#3ecbff,#147af2);filter:blur(34px);opacity:0;will-change:opacity,transform;
+ transition:opacity 1s,transform 1s cubic-bezier(.16,.8,.2,1)}
+.mo .prompt-aura.on{opacity:.3;animation:auraBreathe 4s ease-in-out infinite alternate}
+.mo .prompt-aura.typing{opacity:.55;transform:scale(1.01);animation:none}
+.mo .prompt-aura.sent{animation:auraFlash 1.4s cubic-bezier(.2,.7,.2,1)}
 @keyframes auraBreathe{from{opacity:.22}to{opacity:.36}}
-@keyframes auraFlash{0%{opacity:.55}20%{opacity:.8;transform:scale(1.04);filter:blur(34px) brightness(1.3)}100%{opacity:.3}}
+@keyframes auraFlash{0%{opacity:.55}20%{opacity:.8;transform:scale(1.04)}100%{opacity:.3}}
 .send.go{animation:ping .7s ease-out}
 @keyframes ping{from{box-shadow:0 0 0 0 rgba(140,191,255,.7)}to{box-shadow:0 0 0 16px rgba(140,191,255,0)}}
 .tag{transition:border-color .5s,box-shadow .5s}
@@ -155,7 +155,7 @@
 .mo .fstep.hl{background:linear-gradient(rgba(20,122,242,.16),rgba(20,122,242,.16)),#0a192d}
 .comet{position:absolute;left:0;top:50%;width:160px;height:2px;border-radius:2px;opacity:0;
  background:linear-gradient(90deg,transparent,rgba(122,184,255,.9),#fff);box-shadow:0 0 18px 2px rgba(122,184,255,.6);animation:comet 4.2s cubic-bezier(.45,0,.25,1) infinite}
-@keyframes comet{0%{left:0;opacity:0}8%,88%{opacity:1}100%{left:calc(100% - 160px);opacity:0}}
+@keyframes comet{0%{transform:translateX(0);opacity:0}8%,88%{opacity:1}100%{transform:translateX(974px);opacity:0}}
 .mo .farr{animation:arw 4.2s ease-in-out infinite}
 @keyframes arw{0%,100%{opacity:.5;transform:none}10%{opacity:1;transform:translateX(3px)}25%{opacity:.5;transform:none}}
 
@@ -180,3 +180,8 @@
  .hans,.comet,.wires,.pulse{display:none}
  .mo .prompt-box{position:relative;left:0}
 }
+
+/* 화면 밖 섹션의 반복 애니메이션 멈춤 (motion.js 가 idle 을 붙임) */
+.mo .idle *,.mo .idle *::before,.mo .idle *::after{animation-play-state:paused!important}
+.fly .prompt-box{transform-origin:0 0}
+.mo .fcard,.mo .showcase .app{will-change:transform}

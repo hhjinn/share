@@ -25,7 +25,8 @@ $$('.dots i').forEach(i => { i.style.setProperty('--a', i.style.opacity); i.styl
 hero.insertAdjacentHTML('afterbegin', '<div class="spot"></div>');
 $('.hero .deco').insertAdjacentHTML('beforeend', '<i class="shock"></i><i class="shock" style="animation-delay:.85s"></i>');
 $$('[class*=deco] img[src*="ell"],[class*=deco] img[src*="blob"],[class*=deco] img[src*="glow"]').forEach((b, i) => b.classList.add(i % 2 ? 'drift2' : 'drift1'));
-hero.addEventListener('mousemove', e => { const r = hero.getBoundingClientRect(); hero.style.setProperty('--mx', e.clientX - r.left + 'px'); hero.style.setProperty('--my', e.clientY - r.top + 'px'); });
+const spot = $('.spot', hero);
+hero.addEventListener('mousemove', e => { const r = hero.getBoundingClientRect(); spot.style.setProperty('--mx', e.clientX - r.left + 'px'); spot.style.setProperty('--my', e.clientY - r.top + 'px'); });
 
 // 히어로 등장 순서 (0.85s 뒤 0.1s 간격): 배지 1, 헤드라인 단어 2~, 부제 8, 입력창 9, 받침 10, 양옆 칩 12, 13 (옆에서), 안내 14
 const h1 = $('.hero h1'), hd = d => .85 + d * .1;
@@ -146,27 +147,42 @@ const pin = document.createElement('div'); sc.before(pin); pin.append(sc);
 const deco2 = $('.deco', sc), box = $('.prompt-box'), comp = $('.comp-box', app);
 let STOP = 0, lay = '';
 function layout(on, vh) {
-  if (lay === on + ':' + vh) return; lay = on + ':' + vh;
-  if (!on) { pin.style.height = ''; sc.removeAttribute('style'); deco2.style.top = ''; STOP = 0; return; }
+  if (lay === on + ':' + vh) return false; lay = on + ':' + vh;
+  if (!on) { pin.style.height = ''; sc.removeAttribute('style'); deco2.style.top = ''; STOP = 0; return true; }
   STOP = Math.round(64 + Math.max(16, (vh - 64 - 700) / 2));
   pin.style.height = vh + PIN + 'px'; deco2.style.top = STOP + 'px';
   sc.style.cssText = `position:sticky;top:0;height:${vh}px;padding:${STOP}px 0 0;background:linear-gradient(#000f24 0,#000f24 ${STOP + 199}px,#f4f4f8 ${STOP + 199}px)`;
+  return true;
 }
+// 위치 캐시: 프레임마다 재면 브라우저가 매번 레이아웃을 다시 계산해 끊김. 크기, 높이가 바뀔 때만 잼
+let G = null;
+function measure() {
+  const y = scrollY, keep = app.style.transform; app.style.transform = 'none';
+  const r = sc.getBoundingClientRect(), s = box.getBoundingClientRect(), d = comp.getBoundingClientRect();
+  G = { pinTop: pin.getBoundingClientRect().top + y, scH: r.height,
+    s: { left: s.left, top: s.top + y, width: s.width, height: s.height, zw: box.offsetWidth },
+    d: { left: d.left, top: d.top - r.top, width: d.width, height: d.height, zw: comp.offsetWidth } };
+  app.style.transform = keep; dirty = true;
+}
+let dirty = true;
+new ResizeObserver(() => { G = null; }).observe(document.body);
+addEventListener('load', () => { G = null; });
+setTimeout(() => { G = null; }, 2600); // 히어로 입력창 등장이 끝난 뒤 자리
 
 // H15 입력창 이동: 히어로 입력창이 스크롤에 따라 답변 화면 입력창 자리로 날아가며 크기와 색이 바뀜. 위로 가면 거꾸로
 const L = (a, b, t) => a + (b - a) * t, sm = (a, b, x) => { x = Math.min(1, Math.max(0, (x - a) / (b - a))); return x * x * (3 - 2 * x); };
 let fly = null, locked = false;
-function morph(f, y, pinTop) {
+function morph(f) {
   if (!fly) {
     fly = document.createElement('div'); fly.className = 'fly'; const c = box.cloneNode(true); c.className = 'prompt-box'; c.removeAttribute('style'); fly.append(c);
     const t = $('.typing', c); t.classList.remove('ph'); t.textContent = QA[0].q; document.body.append(fly);
   }
-  const c = fly.firstChild, s = box.getBoundingClientRect(), d = comp.getBoundingClientRect(), r = sc.getBoundingClientRect();
+  const c = fly.firstChild, s = G.s, d = G.d;
   const e = f < .5 ? 2 * f * f : 1 - (-2 * f + 2) ** 2 / 2, m = sm(.62, .92, f);
-  const W = L(s.width, d.width, e), H = L(s.height, d.height, e), z = L(s.width / box.offsetWidth, d.width / comp.offsetWidth, e);
-  fly.style.cssText = `left:${L(s.left, d.left, e)}px;top:${L(s.top + y, pinTop + d.top - r.top, e)}px;width:${W}px;height:${H}px;opacity:${f >= .98 ? 0 : 1}`;
+  const W = L(s.width, d.width, e), H = L(s.height, d.height, e), z = L(s.width / s.zw, d.width / d.zw, e);
+  fly.style.cssText = `left:${L(s.left, d.left, e)}px;top:${L(s.top, G.pinTop + d.top, e)}px;width:${W}px;height:${H}px;opacity:${f >= .98 ? 0 : 1}`;
   const C = (a, b) => a.map((v, i) => L(v, b[i], m).toFixed(3)).join(',');
-  Object.assign(c.style, { zoom: z, width: W / z + 'px', height: H / z + 'px', padding: L(18, 0, m) + 'px', borderRadius: L(20, 12, e) + 'px',
+  Object.assign(c.style, { transform: `scale(${z})`, width: W / z + 'px', height: H / z + 'px', padding: L(18, 0, m) + 'px', borderRadius: L(20, 12, e) + 'px',
     background: `rgba(${C([5, 31, 61, .92], [255, 255, 255, 1])})`, borderColor: `rgba(${C([255, 255, 255, .16], [218, 220, 224, .72])})`,
     boxShadow: `0 ${L(20, 6, m)}px ${L(70, 18, m)}px rgba(0,39,84,${L(.35, .1, m)})` });
   c.style.setProperty('--m', m);
@@ -178,31 +194,45 @@ function morph(f, y, pinTop) {
 }
 
 // 스크롤 연동: 히어로 흐려짐, 입력창 이동, 답변 화면 기울기 펴짐과 재생, 떠 있는 카드 시차, 소개서 버튼
+// 스크롤이 멈춰 있으면 물결선만 움직이고 나머지는 건너뜀
 const body = $('.hero-body'), floats = $('.floats'), wide = matchMedia('(min-width:768px)');
 function unfly() { if (!locked) return; locked = false; unlockHero(); box.style.visibility = ''; aura.classList.remove('off'); fly?.remove(); fly = null; }
+let lastY = -1, lastWave = 0, lastOp = '';
 function frame(t) {
   const y = scrollY, vh = innerHeight, W = wide.matches;
-  layout(W, vh);
-  if (W) { body.style.opacity = Math.max(0, 1 - y / 420); body.style.filter = y > 1 ? `blur(${Math.min(8, y / 60)}px)` : ''; }
-  else body.style.opacity = body.style.filter = '';
-  app.style.transform = 'none'; // 도착 자리는 펴진 상태로 잼
-  const r = sc.getBoundingClientRect(), pinTop = pin.getBoundingClientRect().top + y;
-  let f;
-  if (W) {
-    f = Math.min(1, Math.max(0, y / pinTop));
-    if (f > .01) { if (!locked) { locked = true; lockHero(); box.style.visibility = 'hidden'; aura.classList.add('off'); } morph(f, y, pinTop); }
-    else unfly();
-  } else { f = Math.min(1, Math.max(0, (vh - r.top) / (vh - 87))); unfly(); }
-  const p = W ? Math.min(1, Math.max(0, (vh - r.top - STOP) / (vh - STOP))) : f, e = 1 - (1 - p) ** 3;
-  app.style.transform = `translateY(${(1 - e) * 90}px) rotateX(${(1 - e) * 22}deg) scale(${.92 + .08 * e})`; app.style.opacity = .25 + .75 * e;
-  cards.forEach(c => c.style.transform = `translateY(${-(r.top - vh * .3) * c.dataset.sp}px)`);
-  if (f >= .98 && !played) { played = true; playApp(); } else if (f <= (W ? .01 : 0) && played) { played = false; resetApp(); }
-  if (played && W) advance((y - pinTop) / PIN);
-  if (r.top < vh && r.bottom > 0) wave(t);
-  floats.classList.toggle('on', y > 700);
+  if (layout(W, vh)) G = null;
+  if (!G) measure();
+  if (y !== lastY || dirty) {
+    lastY = y; dirty = false;
+    // 히어로 글자는 흐려지기만 (스크롤마다 큰 영역에 blur 를 다시 그리면 끊겨서 뺌)
+    const op = W ? String(Math.max(0, 1 - y / 420).toFixed(3)) : '';
+    if (op !== lastOp) { body.style.opacity = op; lastOp = op; }
+    const top = W ? (y < G.pinTop ? G.pinTop - y : Math.min(0, G.pinTop + PIN - y)) : G.pinTop - y;
+    let f;
+    if (W) {
+      f = Math.min(1, Math.max(0, y / G.pinTop));
+      if (f > .01) { if (!locked) { locked = true; lockHero(); box.style.visibility = 'hidden'; aura.classList.add('off'); } morph(f); }
+      else unfly();
+    } else { f = Math.min(1, Math.max(0, (vh - top) / (vh - 87))); unfly(); }
+    if (top < vh && top + G.scH > 0) {
+      const p = W ? Math.min(1, Math.max(0, (vh - top - STOP) / (vh - STOP))) : f, e = 1 - (1 - p) ** 3;
+      app.style.transform = `translateY(${(1 - e) * 90}px) rotateX(${(1 - e) * 22}deg) scale(${.92 + .08 * e})`; app.style.opacity = .25 + .75 * e;
+      cards.forEach(c => c.style.transform = `translateY(${-(top - vh * .3) * c.dataset.sp}px)`);
+    }
+    if (f >= .98 && !played) { played = true; playApp(); } else if (f <= (W ? .01 : 0) && played) { played = false; resetApp(); }
+    if (played && W) advance((y - G.pinTop) / PIN);
+    floats.classList.toggle('on', y > 700);
+  }
+  // 물결선은 화면에 보일 때만, 초당 30번
+  if (t - lastWave > 33 && top0(y, vh, W)) { lastWave = t; wave(t); }
   requestAnimationFrame(frame);
 }
+const top0 = (y, vh, W) => { const top = W ? (y < G.pinTop ? G.pinTop - y : Math.min(0, G.pinTop + PIN - y)) : G.pinTop - y; return top < vh && top + G.scH > 0; };
 requestAnimationFrame(frame);
+
+// 화면 밖 섹션의 반복 애니메이션은 멈춤 (보이지 않는 곳을 계속 다시 그리지 않게)
+const idle = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle('idle', !e.isIntersecting)));
+$$('main>section, main>div, .cta-sec').forEach(s => idle.observe(s));
 
 // 탭 자동 순환 (기능 6s, 진행 막대 / 직무 5s). 직접 누르면 멈춤
 function autoTabs(host, btns, ms, bar) {
