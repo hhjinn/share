@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OwlAI</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+/* OwlAI 사용하기 화면: 앱 첫 화면과 로그인 창 시안 이미지(1440x900) 위에 누르는 자리를 얹음 (모션 시안 클릭 연결과 같은 자리) */
+*{box-sizing:border-box;margin:0}
+body{background:#f7f8fa;font-family:"Pretendard Variable",Pretendard,sans-serif}
+.shot{position:relative;width:min(100vw,160vh);margin:0 auto}
+.shot img{display:block;width:100%}
+.shot a{position:absolute;cursor:pointer}
+.view[hidden]{display:none}
+#toast{position:fixed;left:50%;bottom:40px;transform:translate(-50%,12px);opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;padding:12px 18px;border-radius:12px;background:#0f0f1f;color:#fff;font-size:14px;line-height:1.5}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<!-- 좌표는 1440x900 기준 [x, y, 너비, 높이] -->
+<div class="view" id="app"><div class="shot"><img src="img/app-first.png" alt="OwlAI 첫 화면">
+  <a data-r="16,778,130,34" href="index.html" aria-label="홈"></a><a data-r="16,814,130,34" href="pricing.html" aria-label="요금제"></a><a data-r="16,850,130,34" href="contact.html" aria-label="도입 문의"></a>
+  <a data-r="495,375,735,110" href="#login" aria-label="질문 입력"></a><a data-r="1255,18,70,36" href="#login" aria-label="로그인"></a><a data-r="1340,18,80,36" href="#login" aria-label="가입하기"></a>
+</div></div>
+<div class="view" id="login" hidden><div class="shot"><img src="img/app-login.png" alt="OwlAI 로그인">
+  <a data-r="16,778,130,34" href="index.html" aria-label="홈"></a><a data-r="16,814,130,34" href="pricing.html" aria-label="요금제"></a><a data-r="16,850,130,34" href="contact.html" aria-label="도입 문의"></a>
+  <a data-r="905,238,44,42" href="#" aria-label="닫기"></a><a data-r="520,392,400,250" data-toast="로그인하면 질문이 입력창에 채워진 첫 화면으로 돌아갑니다 (이 화면은 시안 없음)"></a>
+</div></div>
+<div id="toast" role="status"></div>
+<script>
+document.querySelectorAll('[data-r]').forEach(a=>{const[x,y,w,h]=a.dataset.r.split(',');Object.assign(a.style,{left:x/14.4+'%',top:y/9+'%',width:w/14.4+'%',height:h/9+'%'})});
+const route=()=>{const login=location.hash==='#login';document.getElementById('app').hidden=login;document.getElementById('login').hidden=!login};
+addEventListener('hashchange',route);route();
+const toast=document.getElementById('toast');let tt;
+document.querySelectorAll('[data-toast]').forEach(a=>a.onclick=()=>{toast.textContent=a.dataset.toast;toast.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>toast.classList.remove('on'),2600)});
+</script>
+</body>
+</html>
