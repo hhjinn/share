@@ -243,7 +243,7 @@
 .dl-main{display:flex;gap:10px;align-items:center;padding:14px 24px;border-radius:12px;background:#147af2;color:#fff;font-size:16px;font-weight:600;line-height:1.5;box-shadow:0 10px 30px rgba(20,122,242,.45)}
 .dl-web{display:inline-block;margin-top:20px;font-size:14px;color:rgba(255,255,255,.7)}
 .dl-web:hover{color:#fff}
-.dl-vis{position:relative;width:600px;height:400px;flex:none;perspective:1800px}
+.dl-vis{position:relative;width:600px;height:400px;flex:none}
 /* 기기 뒤 빛 */
 .dl-vis::before{content:"";position:absolute;left:40px;right:-40px;top:40px;bottom:-60px;background:radial-gradient(ellipse at 55% 60%,rgba(64,150,255,.45),transparent 65%);filter:blur(30px);pointer-events:none}
 /* 노트북 창: 살짝 기울이고, 유리 테두리와 아래로 흐려지는 끝 */
