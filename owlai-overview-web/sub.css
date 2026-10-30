@@ -243,16 +243,30 @@
 .dl-main{display:flex;gap:10px;align-items:center;padding:14px 24px;border-radius:12px;background:#147af2;color:#fff;font-size:16px;font-weight:600;line-height:1.5;box-shadow:0 10px 30px rgba(20,122,242,.45)}
 .dl-web{display:inline-block;margin-top:20px;font-size:14px;color:rgba(255,255,255,.7)}
 .dl-web:hover{color:#fff}
-.dl-vis{position:relative;width:600px;height:400px;flex:none}
-.dl-pc{position:absolute;left:0;bottom:0;width:560px;border-radius:12px 12px 0 0;overflow:hidden;background:#fff;box-shadow:0 -10px 60px rgba(20,122,242,.35)}
-.dl-pc i{display:flex;gap:6px;padding:10px 12px;background:#e9edf3}
-.dl-pc i b{width:9px;height:9px;border-radius:50%;background:#c4cad4}
+.dl-vis{position:relative;width:600px;height:400px;flex:none;perspective:1800px}
+/* 기기 뒤 빛 */
+.dl-vis::before{content:"";position:absolute;left:40px;right:-40px;top:40px;bottom:-60px;background:radial-gradient(ellipse at 55% 60%,rgba(64,150,255,.45),transparent 65%);filter:blur(30px);pointer-events:none}
+/* 노트북 창: 살짝 기울이고, 유리 테두리와 아래로 흐려지는 끝 */
+.dl-pc{position:absolute;left:0;bottom:0;width:560px;border-radius:14px 14px 0 0;overflow:hidden;background:#fff;transform:rotateY(-10deg) rotateX(3deg);transform-origin:100% 100%;
+  box-shadow:0 0 0 1px rgba(255,255,255,.22),0 40px 90px rgba(0,8,30,.65),0 0 140px rgba(20,122,242,.3);-webkit-mask-image:linear-gradient(#000 72%,transparent);mask-image:linear-gradient(#000 72%,transparent)}
+.dl-pc i{position:relative;display:flex;gap:7px;align-items:center;padding:11px 14px;background:linear-gradient(#f7f8fa,#e8ecf2);border-bottom:1px solid #dfe3ea}
+.dl-pc i b{width:10px;height:10px;border-radius:50%;background:#ff5f57;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.15)}
+.dl-pc i b:nth-child(2){background:#febc2e}
+.dl-pc i b:nth-child(3){background:#28c840}
+.dl-pc i u{position:absolute;left:50%;transform:translateX(-50%);padding:3px 40px;border-radius:6px;background:rgba(255,255,255,.85);box-shadow:inset 0 0 0 1px #e1e5eb;font-size:10px;font-weight:500;color:#80868b;text-decoration:none}
 .dl-pc img{display:block;width:100%}
-.dl-phone{position:absolute;right:0;bottom:-40px;width:200px;height:404px;padding:8px;border-radius:32px;background:#0b1626;box-shadow:0 20px 50px rgba(0,0,0,.45);overflow:hidden}
-.mp{width:375px;height:790px;transform:scale(.4907);transform-origin:0 0;border-radius:48px;background:#fff;display:flex;flex-direction:column;align-items:center;color:#202124}
-.mp header{align-self:stretch;position:relative;height:70px;border-bottom:1px solid #e8eaed;display:flex;align-items:center;justify-content:center}
+/* 휴대폰: 금속 테두리, 다이내믹 아일랜드, 화면 반사 */
+.dl-phone{position:absolute;right:0;bottom:-40px;width:200px;height:404px;padding:7px;border-radius:38px;background:linear-gradient(150deg,#55617a,#121c2c 30%,#0b1424 70%,#3b465c);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.25),inset 0 0 0 3px #05090f,0 40px 70px rgba(0,8,30,.6),0 0 80px rgba(20,122,242,.28);-webkit-mask-image:linear-gradient(#000 80%,transparent);mask-image:linear-gradient(#000 80%,transparent)}
+.dl-phone::before{content:"";position:absolute;z-index:2;left:50%;top:15px;width:54px;height:16px;margin-left:-27px;border-radius:10px;background:#05090f}
+.dl-phone::after{content:"";position:absolute;z-index:2;inset:7px;border-radius:31px;background:linear-gradient(115deg,rgba(255,255,255,.35),rgba(255,255,255,0) 32%);pointer-events:none}
+.dl-phone .mp{border-radius:63px;overflow:hidden}
+.dl-phone .mp-st{align-self:stretch;height:54px;padding:0 34px 0 44px;display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:600;color:#0f0f1f}
+.dl-phone .mp-st em{width:26px;height:12px;border-radius:4px;border:1.5px solid #0f0f1f;box-shadow:inset 0 0 0 1.5px #fff,inset 18px 0 #0f0f1f}
+.mp{width:375px;height:790px;transform:scale(.4907);transform-origin:0 0;background:#fff;display:flex;flex-direction:column;align-items:center;color:#202124}
+.mp header{align-self:stretch;position:relative;height:56px;border-bottom:1px solid #e8eaed;display:flex;align-items:center;justify-content:center}
 .mp header i{position:absolute;left:24px;width:22px;height:2px;background:#5f6368;box-shadow:0 -7px #5f6368,0 7px #5f6368}
-.mp h4{margin-top:220px;font-size:22px;font-weight:700;line-height:1.45;text-align:center}
+.mp h4{margin-top:176px;font-size:22px;font-weight:700;line-height:1.45;text-align:center}
 .mp-box{margin-top:44px;width:343px;padding:20px 16px 16px;border-radius:24px;border:1px solid #dadce0;box-shadow:0 4px 14px rgba(0,0,0,.08)}
 .mp-box p{margin:0 0 0 4px;font-size:16px;color:#80868b}
 .mp-bar{margin-top:24px;display:flex;align-items:center;gap:8px}
