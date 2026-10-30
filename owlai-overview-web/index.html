@@ -6,33 +6,14 @@
 <title>OwlAI 서비스 소개</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="style.css">
+<script src="layout.js"></script>
 <link rel="stylesheet" href="motion.css">
 <script>/[?&]motion=0/.test(location.search)||document.documentElement.classList.add('mo')</script>
 </head>
 <body>
 
 <!-- GNB -->
-<header class="gnb">
-  <a href="#" class="gnb-logo"><img src="img/logo-white.png" alt="OwlAI" width="128" height="32"></a>
-  <nav class="gnb-menu">
-    <a href="#features">기능</a>
-    <a href="pricing.html">요금제</a>
-    <div class="has-sub"><button class="sub-btn">리소스 <img src="img/ic-chev.svg" width="14" height="14" alt=""></button>
-      <div class="sub-menu">
-        <a href="#"><i><img src="img/r-book-open.svg" width="18" alt=""></i><div><b>사용자 매뉴얼 <small>↗</small></b><span>기능별 사용법과 DB 연결 방법</span></div></a>
-        <a href="updates.html"><i><img src="img/r-spark.svg" width="18" alt=""></i><div><b>업데이트 소식</b><span>새 기능과 변경 사항</span></div></a>
-      </div>
-    </div>
-    <a href="#" data-soon>구축형</a>
-    <a href="download.html">다운로드</a>
-  </nav>
-  <div class="gnb-right">
-    <div class="lang"><span class="on">KO</span><a href="en.html" lang="en">EN</a></div>
-    <a href="contact.html" class="btn-ghost">도입 문의</a>
-    <a href="app.html" class="btn-white">OwlAI 사용하기</a>
-    <button class="gnb-burger" aria-label="메뉴"><span></span><span></span><span></span></button>
-  </div>
-</header>
+<owl-gnb page="home"></owl-gnb>
 
 <main>
 <!-- 1 히어로 -->
@@ -477,28 +458,7 @@
 </main>
 
 <!-- 푸터 -->
-<footer class="foot">
-  <div class="wrap">
-    <div class="foot-top">
-      <div class="foot-brand">
-        <img src="img/logo.png" width="120" height="30" alt="OwlAI">
-        <p>우리 회사 데이터, 이제 말로 물어보세요</p>
-        <div class="lang light"><span class="on">KO</span><a href="en.html" lang="en">EN</a></div>
-      </div>
-      <nav class="foot-nav">
-        <div><b>제품</b><a href="#features">기능</a><a href="pricing.html">요금제</a><a href="#" data-soon>구축형</a></div>
-        <div><b>다운로드</b><a href="download.html#win">Windows</a><a href="download.html#mac">macOS</a><a href="download.html#ios">iOS</a><a href="download.html#android">Android</a></div>
-        <div><b>리소스</b><a href="#">사용자 매뉴얼 ↗</a><a href="updates.html">업데이트 소식</a></div>
-        <div><b>회사</b><a href="#">회사 소개 ↗</a><a href="contact.html">도입 문의</a></div>
-        <div><b>정책</b><a href="#">이용약관</a><a href="#">개인정보처리방침</a></div>
-      </nav>
-    </div>
-    <div class="foot-info">
-      <dl><div><dt>회사명</dt><dd>㈜티맥스티베로</dd></div><div><dt>대표이사</dt><dd>박경희</dd></div><div><dt>사업자등록번호</dt><dd>306-86-01745</dd></div><div><dt>주소</dt><dd>경기도 성남시 분당구 정자일로 45, 티맥스소프트타워</dd></div></dl>
-      <p>Copyright (c) 2026. TmaxTibero. All rights reserved.</p>
-    </div>
-  </div>
-</footer>
+<owl-foot page="home"></owl-foot>
 
 <div class="floats">
   <a href="#" class="f-brochure" data-brochure><b>↓</b>소개서 받기</a>

@@ -6,33 +6,14 @@
 <title>OwlAI Overview</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="style.css">
+<script src="layout.js"></script>
 <link rel="stylesheet" href="motion.css">
 <script>/[?&]motion=0/.test(location.search)||document.documentElement.classList.add('mo')</script>
 </head>
 <body>
 
 <!-- GNB -->
-<header class="gnb">
-  <a href="#" class="gnb-logo"><img src="img/logo-white.png" alt="OwlAI" width="128" height="32"></a>
-  <nav class="gnb-menu">
-    <a href="#features">Features</a>
-    <a href="pricing.html">Pricing</a>
-    <div class="has-sub"><button class="sub-btn">Resources <img src="img/ic-chev.svg" width="14" height="14" alt=""></button>
-      <div class="sub-menu">
-        <a href="#"><i><img src="img/r-book-open.svg" width="18" alt=""></i><div><b>User manual <small>↗</small></b><span>How to use each feature and connect DBs</span></div></a>
-        <a href="updates.html"><i><img src="img/r-spark.svg" width="18" alt=""></i><div><b>What's new</b><span>New features and changes</span></div></a>
-      </div>
-    </div>
-    <a href="#" data-soon>On-premises</a>
-    <a href="download.html">Download</a>
-  </nav>
-  <div class="gnb-right">
-    <div class="lang"><a href="index.html" lang="ko">KO</a><span class="on">EN</span></div>
-    <a href="contact.html" class="btn-ghost">Contact us</a>
-    <a href="app.html" class="btn-white">Try OwlAI</a>
-    <button class="gnb-burger" aria-label="Menu"><span></span><span></span><span></span></button>
-  </div>
-</header>
+<owl-gnb page="home"></owl-gnb>
 
 <main>
 <!-- 1 히어로 -->
@@ -477,28 +458,7 @@
 </main>
 
 <!-- 푸터 -->
-<footer class="foot">
-  <div class="wrap">
-    <div class="foot-top">
-      <div class="foot-brand">
-        <img src="img/logo.png" width="120" height="30" alt="OwlAI">
-        <p>Ask your company data in plain language</p>
-        <div class="lang light"><a href="index.html" lang="ko">KO</a><span class="on">EN</span></div>
-      </div>
-      <nav class="foot-nav">
-        <div><b>Product</b><a href="#features">Features</a><a href="pricing.html">Pricing</a><a href="#" data-soon>On-premises</a></div>
-        <div><b>Download</b><a href="download.html#win">Windows</a><a href="download.html#mac">macOS</a><a href="download.html#ios">iOS</a><a href="download.html#android">Android</a></div>
-        <div><b>Resources</b><a href="#">User manual ↗</a><a href="updates.html">What's new</a></div>
-        <div><b>Company</b><a href="#">About us ↗</a><a href="contact.html">Contact us</a></div>
-        <div><b>Policies</b><a href="#">Terms of service</a><a href="#">Privacy policy</a></div>
-      </nav>
-    </div>
-    <div class="foot-info">
-      <dl><div><dt>Company</dt><dd>TmaxTibero Co., Ltd.</dd></div><div><dt>CEO</dt><dd>박경희</dd></div><div><dt>Business registration no.</dt><dd>306-86-01745</dd></div><div><dt>Address</dt><dd>TmaxSoft Tower, 45 Jeongja-il-ro, Bundang-gu, Seongnam-si, Gyeonggi-do</dd></div></dl>
-      <p>Copyright (c) 2026. TmaxTibero. All rights reserved.</p>
-    </div>
-  </div>
-</footer>
+<owl-foot page="home"></owl-foot>
 
 <div class="floats">
   <a href="#" class="f-brochure" data-brochure><b>↓</b>Get brochure</a>
