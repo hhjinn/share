@@ -230,3 +230,25 @@
   .done{min-height:520px}
   .done-btns{flex-direction:column;width:100%}
 }
+
+/* 다운로드 */
+.dl-top{margin-top:28px;display:flex;gap:20px;align-items:center}
+.dl-main{padding:14px 24px;border-radius:12px;background:#147af2;color:#fff;font-size:16px;font-weight:600;line-height:1.5}
+.dl-web{font-size:15px;font-weight:500;color:#004591}
+.dl-sec{padding-bottom:96px}
+.dl-sec h2{margin:40px 0 16px;font-size:22px;font-weight:600;line-height:1.5}
+.dl-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.dl-card{scroll-margin-top:110px;display:flex;flex-direction:column;align-items:flex-start;padding:28px 32px;border-radius:16px;border:1px solid #e3e3eb;background:#fff}
+.dl-card.on{border-color:#147af2;box-shadow:0 0 0 1px #147af2}
+.dl-card i{width:44px;height:44px;border-radius:12px;background:#f4f4f8;display:flex;align-items:center;justify-content:center}
+.dl-card h3{margin-top:16px;font-size:20px;font-weight:600;line-height:1.5}
+.dl-card p{margin-top:4px;font-size:15px;line-height:1.5;color:#666978}
+.dl-btn{margin-top:24px;padding:11px 18px;border-radius:10px;background:#0f0f1f;color:#fff;font-size:14px;font-weight:600;line-height:1.5}
+.dl-note{margin-top:32px;font-size:14px;line-height:1.5;color:#666978}
+.dl-note a{color:#004591;text-decoration:underline}
+@media (max-width:767px){
+  .dl-top{flex-direction:column;align-items:stretch;text-align:center}
+  .dl-grid{grid-template-columns:1fr}
+  .dl-card{padding:24px}
+  .dl-sec{padding-bottom:64px}
+}

@@ -13,6 +13,9 @@ body{background:#f7f8fa;font-family:"Pretendard Variable",Pretendard,sans-serif}
 .shot img{display:block;width:100%}
 .shot a{position:absolute;cursor:pointer}
 .view[hidden]{display:none}
+.shot{--k:calc(min(100vw,160vh)/1440)}
+.shot .side{display:flex;align-items:center;padding:calc(17*var(--k)) 0 0 calc(17*var(--k));border-top:1px solid #e8eaed;background:#f8f9fa;color:#5f6368;font-size:calc(15*var(--k));text-decoration:none}
+#login .side{border-color:#888a8d;background:#909293;color:#414447}
 #toast{position:fixed;left:50%;bottom:40px;transform:translate(-50%,12px);opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;padding:12px 18px;border-radius:12px;background:#0f0f1f;color:#fff;font-size:14px;line-height:1.5}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 </style>
@@ -20,11 +23,11 @@ body{background:#f7f8fa;font-family:"Pretendard Variable",Pretendard,sans-serif}
 <body>
 <!-- 좌표는 1440x900 기준 [x, y, 너비, 높이] -->
 <div class="view" id="app"><div class="shot"><img src="img/app-first.png" alt="OwlAI 첫 화면">
-  <a data-r="16,778,130,34" href="index.html" aria-label="홈"></a><a data-r="16,814,130,34" href="pricing.html" aria-label="요금제"></a><a data-r="16,850,130,34" href="contact.html" aria-label="도입 문의"></a>
+  <a data-r="8,729,274,43" href="download.html" class="side">앱 다운로드</a><a data-r="16,778,130,34" href="index.html" aria-label="홈"></a><a data-r="16,814,130,34" href="pricing.html" aria-label="요금제"></a><a data-r="16,850,130,34" href="contact.html" aria-label="도입 문의"></a>
   <a data-r="495,375,735,110" href="#login" aria-label="질문 입력"></a><a data-r="1255,18,70,36" href="#login" aria-label="로그인"></a><a data-r="1340,18,80,36" href="#login" aria-label="가입하기"></a>
 </div></div>
 <div class="view" id="login" hidden><div class="shot"><img src="img/app-login.png" alt="OwlAI 로그인">
-  <a data-r="16,778,130,34" href="index.html" aria-label="홈"></a><a data-r="16,814,130,34" href="pricing.html" aria-label="요금제"></a><a data-r="16,850,130,34" href="contact.html" aria-label="도입 문의"></a>
+  <a data-r="8,729,274,43" href="download.html" class="side">앱 다운로드</a><a data-r="16,778,130,34" href="index.html" aria-label="홈"></a><a data-r="16,814,130,34" href="pricing.html" aria-label="요금제"></a><a data-r="16,850,130,34" href="contact.html" aria-label="도입 문의"></a>
   <a data-r="905,238,44,42" href="#" aria-label="닫기"></a><a data-r="520,392,400,250" data-toast="로그인하면 질문이 입력창에 채워진 첫 화면으로 돌아갑니다 (이 화면은 시안 없음)"></a>
 </div></div>
 <div id="toast" role="status"></div>
