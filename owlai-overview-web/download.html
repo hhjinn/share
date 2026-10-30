@@ -34,25 +34,40 @@
 <div class="sub-band"></div>
 
 <main>
-<section class="wrap ptitle">
-  <small>다운로드</small>
-  <h1>OwlAI 앱 다운로드</h1>
-  <p>웹과 같은 계정으로 데스크톱과 모바일에서도 질문합니다.</p>
-  <div class="dl-top"><a href="#win" class="dl-main" id="dlMain">Windows용 다운로드</a><a href="app.html" class="dl-web">웹에서 바로 쓰기 →</a></div>
+<section class="dl-hero">
+  <div class="wrap">
+    <div class="dl-copy">
+      <span class="eyebrow dark">다운로드</span>
+      <h1>책상에서도, 이동 중에도<br><em>OwlAI에 질문하세요</em></h1>
+      <p>웹과 같은 계정으로 데스크톱 앱과 모바일 앱에서 씁니다.</p>
+      <div class="dl-top"><a href="#win" class="dl-main" id="dlMain"><img src="img/os-windows-w.svg" width="18" height="18" alt=""><span>Windows용 다운로드</span></a><a href="#all" class="btn-ghost">다른 OS 보기</a></div>
+      <a href="app.html" class="dl-web">설치 없이 웹에서 바로 쓰기 →</a>
+    </div>
+    <div class="dl-vis" aria-hidden="true">
+      <div class="dl-pc"><i><b></b><b></b><b></b></i><img src="img/app-first.png" alt=""></div>
+      <div class="dl-phone"><div><img src="img/logo.png" width="64" alt=""><p>무엇을 도와드릴지<br>말씀해 주세요.</p><span>OwlAI에게 무엇이든 물어보세요</span></div></div>
+    </div>
+  </div>
 </section>
 
-<section class="wrap dl-sec">
-  <h2>데스크톱</h2>
-  <div class="dl-grid">
-    <div class="dl-card" id="win"><i><img src="img/dl-monitor.svg" width="22" alt=""></i><h3>Windows</h3><p>Windows 10 이상, 64비트</p><a href="#" class="dl-btn">Windows용 다운로드 (.exe)</a></div>
-    <div class="dl-card" id="mac"><i><img src="img/dl-monitor.svg" width="22" alt=""></i><h3>macOS</h3><p>macOS 12 이상, Apple Silicon과 Intel</p><a href="#" class="dl-btn">macOS용 다운로드 (.dmg)</a></div>
+<section class="dl-sec" id="all">
+  <div class="wrap">
+    <h2 class="h32">쓰는 기기에 맞게 받으세요</h2>
+    <div class="dl-grid">
+    <div class="dl-card" id="win"><em>이 기기</em><img src="img/os-windows.svg" width="32" height="32" alt=""><h3>Windows</h3><p>Windows 10 이상, 64비트</p><a href="#" class="dl-btn">다운로드</a><small>.exe 설치 파일</small></div>
+    <div class="dl-card" id="mac"><em>이 기기</em><img src="img/os-apple.svg" width="32" height="32" alt=""><h3>macOS</h3><p>macOS 12 이상</p><a href="#" class="dl-btn">다운로드</a><small>Apple Silicon, Intel 공용 .dmg</small></div>
+    <div class="dl-card" id="ios"><em>이 기기</em><img src="img/os-apple.svg" width="32" height="32" alt=""><h3>iOS</h3><p>iPhone, iPad (iOS 16 이상)</p><a href="#" class="dl-btn">App Store</a><small>App Store에서 설치</small></div>
+    <div class="dl-card" id="android"><em>이 기기</em><img src="img/os-android.svg" width="32" height="32" alt=""><h3>Android</h3><p>Android 10 이상</p><a href="#" class="dl-btn">Google Play</a><small>Google Play에서 설치</small></div>
+    </div>
+    <div class="dl-qr">
+      <img src="img/dl-qr.svg" width="112" height="112" alt="다운로드 페이지 QR 코드">
+      <div><h3>휴대폰으로 받기</h3><p>휴대폰 카메라로 QR 코드를 찍으면<br>기기에 맞는 스토어로 이동합니다.</p></div>
+    </div>
+    <div class="band-cta">
+      <div><h2>설치 없이 먼저 써 보고 싶다면</h2><p>웹에서 바로 질문할 수 있습니다. 처음 가입하면 1개월 무료 체험 크레딧을 드립니다.</p></div>
+      <div><a href="updates.html" class="btn-ghost">업데이트 소식</a><a href="app.html" class="btn-white">웹에서 시작하기</a></div>
+    </div>
   </div>
-  <h2>모바일</h2>
-  <div class="dl-grid">
-    <div class="dl-card" id="ios"><i><img src="img/dl-phone.svg" width="22" alt=""></i><h3>iOS</h3><p>iPhone, iPad (iOS 16 이상)</p><a href="#" class="dl-btn">App Store에서 받기</a></div>
-    <div class="dl-card" id="android"><i><img src="img/dl-phone.svg" width="22" alt=""></i><h3>Android</h3><p>Android 10 이상</p><a href="#" class="dl-btn">Google Play에서 받기</a></div>
-  </div>
-  <p class="dl-note">버전별 변경 사항은 <a href="updates.html">업데이트 소식</a>에서 볼 수 있습니다.</p>
 </section>
 </main>
 
@@ -87,9 +102,10 @@
 <script src="main.js"></script>
 <script src="sub.js"></script>
 <script>
+// 접속한 기기의 OS에 맞춰 맨 위 버튼과 카드 강조를 바꿈
 {const u=navigator.userAgent,os=/Android/.test(u)?'android':/iPhone|iPad|iPod/.test(u)||/Mac/.test(u)&&navigator.maxTouchPoints>1?'ios':/Mac/.test(u)?'mac':'win',
-b=document.getElementById('dlMain');b.href='#'+os;b.textContent={win:'Windows용 다운로드',mac:'macOS용 다운로드',ios:'App Store에서 받기',android:'Google Play에서 받기'}[os];
-document.getElementById(os).classList.add('on')}
+b=document.getElementById('dlMain'),[t,ic]={win:['Windows용 다운로드','windows'],mac:['macOS용 다운로드','apple'],ios:['App Store에서 받기','apple'],android:['Google Play에서 받기','android']}[os];
+b.href='#'+os;b.querySelector('span').textContent=t;b.querySelector('img').src='img/os-'+ic+'-w.svg';document.getElementById(os).classList.add('on')}
 </script>
 </body>
 </html>
