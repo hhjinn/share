@@ -475,6 +475,7 @@ h2 em{font-style:normal;color:#004591}
 .cta-input b{font-size:15px;color:#8cbfff}
 .cta-input input{flex:1;min-width:0;border:0;background:none;outline:none;font:inherit;font-size:17px;line-height:1.5;color:rgba(255,255,255,.75);caret-color:#147af2}
 .cta-input button{padding:14px 22px;border-radius:12px;background:#fff;color:#002754;font-size:15px;font-weight:600;line-height:1.5;box-shadow:0 8px 28px rgba(77,153,255,.3);white-space:nowrap}
+.cta-links{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 32px}
 .cta-link{font-size:15px;font-weight:500;line-height:1.5;color:#b2d4ff}
 
 /* 푸터 */
