@@ -1291,9 +1291,10 @@ function calculate(inp) {
     rules.push({ title: `라이선스 유형 규칙 (${lt.id})`, note: `${lt.description || ''} 부과 항목: ${kinds.map(k => cfg.priceKinds.find(p => p.id === k)?.name || k).join(', ') || '(없음)'}` });
     const notCharged = cfg.priceKinds.filter(k => !kinds.includes(k.id));
     // 노드 역할별 구성 라벨 결정 (Read Only 는 Standby 안에 포함)
+    // Read Only Standby 가 하나라도 있으면 기본 노드도 Read Only 라벨로 과금 (제품 BillingTier 와 동일)
     const roCount = Math.min(nodes.readOnly, nodes.standby);
     const roleGroups = [
-      { role: 'base', label: '기본 노드', count: nodes.base },
+      { role: roCount > 0 ? 'readonly' : 'base', label: '기본 노드', count: nodes.base },
       { role: 'standby', label: '복구용 Standby', count: nodes.standby - roCount },
       { role: 'readonly', label: 'Read Only Standby', count: roCount }
     ].filter(g => g.count > 0);
